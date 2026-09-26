@@ -1,0 +1,14 @@
+\begin{tabular}{lc}
+\toprule
+Check & Pass \\
+\midrule
+Full row rank: least-norm, minimality, CGLS = dense & 80/80 \\
+More constraints than $d$: residual $>0$ with certificate & 40/40 \\
+Rank-deficient, target in range: residual $\approx 0$ & 40/40 \\
+Low-rank rows ($k{=}8$, rank 5): certificate & 20/20 \\
+Duplicate rows, targets $(\alpha,0)$: residual $\alpha/\sqrt2$ & 20/20 \\
+ReLU: negative target unattainable & 20/20 \\
+JumpReLU: target in $(0,\theta]$ unattainable & 20/20 \\
+TopK: entering target evicts a feature & 20/20 \\
+\bottomrule
+\end{tabular}

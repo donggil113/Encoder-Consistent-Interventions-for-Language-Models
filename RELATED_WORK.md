@@ -17,7 +17,36 @@ here read the raw text of these papers.
 | `SPOT-CHECKED` | The main agent re-fetched the page and confirmed the quoted claim. |
 | `UNVERIFIED` | Stated in a search snippet or inferred; not confirmed from a source. |
 
+| `SOURCE-TEXT` | (second session) The arXiv HTML was fetched with curl and converted to text, and the equations and experiment sections were read in that text. For the 10 papers in §0 this supersedes `FT-X`/`PARTIAL-X`. |
+
 "(derivation)" marks our own linear algebra, not a claim made by a paper.
+
+## 0. Source-text verification of the closest papers (second session, 2026-09-26)
+
+All ten were read as `SOURCE-TEXT`. The HTML version equals the latest version listed on
+each abs page.
+
+| Paper | Key equations / settings as written | Still not found |
+|---|---|---|
+| SAE-TS, arXiv:2411.02193v2 | Eq. 2: `y = E_steered[f(x)] − E_unsteered[f(x)]` over SAE activations of rollouts passed "back through the model up to layer l". Effect model `ŷ = xM + b` (M: d_model × d_sae), learned from 50k decoder vectors of a 65k SAE with α set so loss rises by 0.5. Steering vector `s = M_j/‖M_j‖ − λ Mb/‖Mb‖`, λ=1, then unit-normalised. App. A.1 / Table 3: the pseudoinverse of **M** (the learned effect map, not the SAE encoder) scores below SAE-TS on **all 9** tasks (e.g. Wedding 0.5432 vs 0.0567). Evaluation: gpt-4o-mini judge (behavioural × coherence), prompt "<BOS>I think", 256 × 32-token completions. | Whether the steering vector is present during the re-pass; the target vector used in the pseudoinverse solve. |
+| Cui, Shen, Yang, arXiv:2606.18322v1 | Constraints C1 (encoder orthogonality `A^T δ = 0`), C2 (activation stability), C3 (decode stability), C4 (budget). Only C1 (projection) and C4 (clipping) are enforced; C2/C3 are checked afterwards. Within a layer: `P = I − A(A^T A)^† A^T`. Across layers: `P = I − J_t^T (J_t J_t^T)^† J_t`, where J_t is the Jacobian of the defended-feature map. Refusal recovery 95.8% at drift 0.131. | Exact model names for some tasks ("Gemma-scale model"). |
+| GLP, arXiv:2602.06964v1 §4.1 | Llama-3.1-8B-Base + LlamaScope, 500 random directions, judge 0–2 on concept and fluency. Quote: "feature descriptions are derived from the SAE encoder, while concept directions for steering are derived from the SAE decoder". Conclusion: "off-manifold artifacts, not just encoder-decoder misalignment, contribute to SAE steering failures". | SAE layer and width; numbers beyond the figure. |
+| Duan, arXiv:2606.08365v1 | `h' = h + α d_f`, α = 1.0, at the final token. Collateral is counted on a **downstream** SAE (e.g. Gemma layer 12 → 16) and normalised by the logit-effect norm. | Any same-layer measurement of the target's own activation. |
+| Khan et al., arXiv:2609.22782v1 | α* = the smallest α on {0, 0.25, 0.5, 1, 2, 3, 5, 10, 20} that raises a keyword-based refusal rate by ≥ 0.10. Predictors: neighbour density, max cosine, co-activation. Off-target effects are deferred to future work. | — |
+| AxBench, arXiv:2501.17148v3 | SAE steering `h + α w_dec` with a unit-norm direction; α = steering factor × Neuronpedia max activation. Table 2 means: DiffMean 0.239, SAE 0.165. The body text's win rates (88.0% / 61.6%) disagree with Table 3 (81.8% / 58.7%); cite the table. | — |
+| Arad et al., arXiv:2505.20063v2 | Encode, add s·a_max to feature i, decode `W_dec ã + b_dec`. Input and output scores are Eqs. 8–10; Gen Success@k (Eq. 7) is a keyword-style label. | Whether the error term is added back. |
+| ReFT, arXiv:2404.03592v3 | DII Eq. 1: `b + R^T(Rs − Rb)`. LoReFT Eq. 2: `h + R^T(Wh + b − Rh)`, R with orthonormal rows. | — |
+| AlphaEdit, arXiv:2410.02355v4 | `P = Û Û^T` with an eigenvalue cut at 1e-2; closed form Eq. 14. | App. B.5 heading "+αI" vs Eq. 14 "+I" (not reconciled). |
+| ActAdd, arXiv:2308.10248v5 | Sec. 4.1.3 and App. H: wedding steering is scored by the "average number of wedding words per completion" with the keywords wedding, weddings, wed, marry, married, marriage, bride, groom, honeymoon. This is the label used in P3-REAL-02. | — |
+
+**Bibliography.** `paper/references.bib` has 33 entries.
+- 18 are venue-verified from proceedings pages (PMLR, NeurIPS, ACL Anthology, OpenReview).
+- 10 are arXiv BibTeX copied verbatim; their year is that of the latest arXiv version.
+- One (Scaling Monosemanticity) is the site-provided citation.
+- Four are numerics references checked through Crossref/DOI or library-catalogue records.
+
+Not venue-verified, so cited as arXiv: SAE-TS, Cui et al., Duan, Chaudhary & Geiger,
+ActAdd, Bhalla et al., Mayne et al., O'Brien et al., FGAA and Khan et al.
 
 ## 1. Closest prior work: what is already known
 

@@ -1,0 +1,14 @@
+\begin{tabular}{lccc}
+\toprule
+Method & $\|\delta\|/\tau$ & Target err & Total drift \\
+\midrule
+decoder & 1 & 0.339 & 0.597 \\
+rescaled decoder & 1.57 & $<\!10^{-6}$ & 0.944 \\
+LN correction & 3.17 & 0.00955 & 1.74 \\
+LN, scaled to $\|\alpha D_j\|$ & 1 & 0.629 & 0.278 \\
+trust region, $0.5\tau$ & 0.5 & 0.676 & 0.202 \\
+trust region, $\tau$ & 1 & 0.4 & 0.361 \\
+trust region, $2\tau$ & 1.93 & 0.137 & 0.819 \\
+LN + repair & 0.935 & 0.501 & 0.301 \\
+\bottomrule
+\end{tabular}

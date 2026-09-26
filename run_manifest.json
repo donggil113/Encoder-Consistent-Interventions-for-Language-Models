@@ -121,5 +121,88 @@
       "reason": "rerun after summary-only fix (commit 46dbb25)"
     },
     "raw_sha256_identical_across_runs": true
+  },
+  "compute_ledger": {
+    "note": "All CPU, single process. First-session numbers are wall-clock values printed by the commands at the time; none were estimated.",
+    "first_session": [
+      {
+        "what": "dev run, seeds 0-2 (v1 config)",
+        "seconds": 8.36
+      },
+      {
+        "what": "dev run, seeds 0-2 (v2 config, with T4b)",
+        "seconds": 11.34
+      },
+      {
+        "what": "component timing smoke on dev seeds (T4 parts, bias values, other experiments)",
+        "seconds": 10.7,
+        "note": "sum of printed component times"
+      },
+      {
+        "what": "report run 1 (commit 6bc3cf5)",
+        "seconds": 77.11
+      },
+      {
+        "what": "report rerun after summary-only fix (commit 46dbb25)",
+        "seconds": 76.0
+      },
+      {
+        "what": "unit tests (several runs)",
+        "seconds_each": "0.1-0.8"
+      }
+    ],
+    "second_session": [
+      {
+        "what": "unit tests, 38 tests (1 skipped: torch)",
+        "seconds": 0.673
+      },
+      {
+        "what": "paper_assets re-aggregation from results/raw (final run)",
+        "seconds": 1.21,
+        "note": "run about 8 times during writing, about 1.2 s each"
+      },
+      {
+        "what": "tex_check static checks",
+        "seconds": 0.037
+      },
+      {
+        "what": "real01r check-env/contract, real02 check-env/calibrate",
+        "seconds": "<0.01 each",
+        "status": "BLOCKED_DEPENDENCIES"
+      },
+      {
+        "what": "network reads for verification (HF API metadata, 2 small config files, SAELens/TransformerLens sparse git checkouts, arXiv HTML/BibTeX, icml.cc pages, ICML 2026 style zip 228,368 B)",
+        "seconds": "not timed"
+      }
+    ],
+    "not_run": [
+      "P3-REAL-01R contract C3/C4, calibrate, smoke, run, summarize",
+      "P3-REAL-02 calibrate, run, summarize",
+      "any GPU work"
+    ]
+  },
+  "second_session": {
+    "date": "2026-09-26",
+    "experiments_rerun": "none (paper tables are re-aggregated from the unchanged raw CSVs)",
+    "raw_sha256_unchanged": true,
+    "reaggregation": {
+      "script": "src/saeedit/paper_assets.py",
+      "output": "results/reaggregated/paper_numbers.json",
+      "sha256": "ef7e4793845716328bb88dd6dc081d72fe26a9d4b3000faf0f03d44bb9c2b363",
+      "correction": "repair convergence now reported as row counts per cell (ReLU/JumpReLU 72-80/80, TopK 2-66/80); first-session '100%' / '0-88%' were medians of per-instance rates"
+    },
+    "real_model_stage_status": {
+      "real01r": "results/real01r/stage_status.json",
+      "real02": "results/real02/stage_status.json",
+      "verdict": "BLOCKED_DEPENDENCIES"
+    },
+    "manuscript": {
+      "path": "paper/main.tex",
+      "compile": "COMPILE_NOT_RUN",
+      "static_check": "results/reaggregated/tex_check.json",
+      "submission_ready": false,
+      "target_year": 2027,
+      "template_year": 2026
+    }
   }
 }

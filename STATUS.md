@@ -1,6 +1,34 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-09-26. Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-09-26 (second session). Branch: `claude/magical-bell-8vyrpd`.
+
+## Second session summary (read first)
+
+| Layer | Status |
+|---|---|
+| Existing toy raw/config/labels | **Preserved.** No experiment was rerun. Raw sha256 is unchanged (`run_manifest.json → second_session`). T4b stays EXPLORATORY. The dense-T4 failure, target abandonment, leakage moving to unprotected features and the internal/external mismatch are all kept. |
+| Aggregation correction | Repair convergence is now reported as row counts: 72–80/80 per ReLU/JumpReLU cell and 2–66/80 per TopK cell. The first session's "100%" / "0–88%" were medians of per-instance rates. This was re-aggregated from raw by `src/saeedit/paper_assets.py`. |
+| Model–SAE contract | `configs/p3_contract_gpt2_res_jb_l8.json`: revisions, hook, width, dtype, context, licences and file sizes come from source. The activation, input-bias handling and normalisation are SAELens defaults because `cfg.json` omits them. Coordinates follow `center_writing_weights=True`: SAE input = HF hidden state − per-token mean (**derived**, not executed). |
+| Contract checks | C1 **executed: PASS** on the verbatim configs (`tests/fixtures/`). C2 is inferred from file size (header not read). C3 (no-op hook logits) and C4 (L0/FVE) are **NOT_RUN**. |
+| P3-REAL-01R adapter + CLI | Written (`src/saeedit/real/`). Stdlib parts are tested. The torch backend is **NOT_RUN**. `check-env` → `BLOCKED_DEPENDENCIES`; `contract` → `BLOCKED` (`results/real01r/stage_status.json`). |
+| P3-REAL-02 adapter + CLI | Written: wedding task, ActAdd lexicon label, DiffMean baseline, calibration-selected KL budget. **NOT_RUN** (`results/real02/stage_status.json`). |
+| Manuscript v1 | `paper/main.tex`: all sections written. **COMPILE_NOT_RUN** (no LaTeX compiler). Static checks pass (`results/reaggregated/tex_check.json`). TARGET_YEAR=2027, TEMPLATE_YEAR=2026 (official ICML 2026 style, unmodified), `SUBMISSION_READY=false`. Two `\todo` markers remain: REAL-01R and REAL-02 results. |
+| Claims map | `paper/claims.csv` (32 claims → evidence, experiment IDs, assumptions, status). |
+| H_MAIN / R1–R3 | **NOT_RUN** |
+| New-method claim | **Not made.** The prior evidence is against it: SAE-TS pseudo-inverse, Cui et al., toy TX. |
+
+**Next decision experiment:** `P3-REAL-01R` (§7 below). **Needs approval** for:
+- installing Python packages: torch (CPU), transformers, safetensors, huggingface_hub,
+  pyarrow;
+- downloads of 703,545,978 bytes listed in the contract (GPT-2 files 550,959,861 B, SAE L8
+  151,196,298 B, WikiText-103 raw val/test 1,389,819 B), plus package sizes, which have not
+  been verified.
+
+CPU time is unknown until the timing-smoke stage runs.
+
+---
+
+# First session (preserved)
 
 ## 0. Pre-existing state (checked, not assumed)
 
@@ -100,7 +128,7 @@ Summary: `results/summary.json`. Manifest: `run_manifest.json`. Config:
 - The SAE-TS, FGAA, DiffMean and global pseudo-inverse baselines.
 - GPU anything.
 
-## 6. Next decision experiment: `P3-REAL-01` (proposed; requires approval)
+## 6. [SUPERSEDED by §7] Next decision experiment: `P3-REAL-01` (first session design; kept verbatim)
 
 **Purpose.** A cheap gate that can only **STOP** the method claim or permit `P3-REAL-02`.
 It measures, on real SAE weights and real activations, what the toy says decides the
@@ -145,3 +173,34 @@ It also produces the descriptive same-layer fidelity decomposition (gap #1 in
 **Approvals needed:**
 - installing numpy, torch-CPU and safetensors (or SAELens);
 - downloading GPT-2 small, one SAE file and WikiText-103 validation from Hugging Face.
+
+## 7. Next decision experiment (second session): `P3-REAL-01R`
+
+The full specification is `configs/p3_real01r.json`. The changes from §6 are:
+- **Unit.** The independent unit is the test **document**, not the feature. Documents are
+  split before windows are made (WikiText-103 validation → calibration, test → test), and
+  an overlap check runs before any evaluation.
+- **Doses.** They come from calibration data only and are frozen with sha256 before any
+  test window is encoded:
+  - activation quantiles q50/q90/q99 and 2×q99 (`a_max` is recorded, not used);
+  - norm budgets of {0.025, 0.05, 0.1, 0.2} × the median centred residual norm.
+- **Features.** 64, drawn from a calibration density band with seed 0 before any test data
+  is read.
+- **Comparisons.** Equal-norm and target-matched are kept separate. Infeasible rows are
+  kept.
+- **Metrics.**
+  - target change and error;
+  - originally active drift, split into kept and deactivated;
+  - newly active drift;
+  - total non-target drift;
+  - edit norm and mean(δ);
+  - KL and ΔNLL;
+  - time and peak RSS.
+- **Targets.** Active and inactive targets are reported separately.
+- **G1–G3.** The original text is preserved verbatim in the config. Each is read at q99 as
+  a regime curve plus a paired difference with a document-cluster bootstrap interval, with
+  the outcome STOP_SIDE, CONTINUE_SIDE or INCONCLUSIVE. These are operational rules, not
+  significance tests. A large crossing share ends the method claim, not the measurement
+  study.
+- **Stages.** `check-env` → `contract` (C1–C4; BLOCKED on failure) → `calibrate` → `smoke`
+  (calibration documents only; picks N) → `run` → `summarize`.

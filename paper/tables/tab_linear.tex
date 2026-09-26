@@ -1,0 +1,13 @@
+\begin{tabular}{lcccccc}
+\toprule
+Regime & Class & Dec.\ tgt err & Dec.\ leak & Resc.\ leak (norm) & LN leak (norm) & LN resid. \\
+\midrule
+R0: $E{=}D^{+}$, $m{<}d$ & no mismatch & $<\!10^{-6}$ & $<\!10^{-6}$ & $<\!10^{-6}$ (1) & $<\!10^{-6}$ (1) & $<\!10^{-6}$ \\
+R1: orth.\ $D$, $E{=}\mathrm{diag}(s)D^{\top}$ & rescale suffices & 0.365 & $<\!10^{-6}$ & $<\!10^{-6}$ (1.13) & $<\!10^{-6}$ (1.13) & $<\!10^{-6}$ \\
+R2: tied, $c{=}0.3$ & removed by LN & $<\!10^{-6}$ & 0.794 & 0.794 (1) & $<\!10^{-6}$ (1.14) & $<\!10^{-6}$ \\
+R3: scaled tied, $c{=}0.3$ & removed by LN & 0.34 & 0.884 & 0.989 (1.09) & $<\!10^{-6}$ (1.24) & $<\!10^{-6}$ \\
+R4a: tied, $m{>}d$, $P$=all & infeasible & $<\!10^{-6}$ & 1.73 & 1.73 (1) & 0.466 (0.398) & 0.821 \\
+R4b: tied, $m{>}d$, $|P|{=}7$ & moved to unprot. & $<\!10^{-6}$ & 1.73 & 1.73 (1) & 2.16 (1.35) & $<\!10^{-6}$ \\
+R5: $E{=}D^{+}$, $m{>}d$, $|P|{=}7$ & moved to unprot. & 0.669 & 0.467 & 1.44 (3.1) & 2.21 (3.6) & $<\!10^{-6}$ \\
+\bottomrule
+\end{tabular}

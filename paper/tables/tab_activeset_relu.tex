@@ -1,0 +1,13 @@
+\begin{tabular}{llc|ccc|cccc|cc}
+\toprule
+ & & & \multicolumn{3}{c|}{Rescaled decoder} & \multicolumn{4}{c|}{LN correction} & \multicolumn{2}{c}{LN + repair} \\
+Act. & Target & $\alpha$ & orig.\ act. & new & norm & tgt err & orig.\ act. & new & norm & tgt err & total \\
+\midrule
+ReLU & active & 0.25 & 0.827 & 0.207 & 1.57 & 0.00955 & 0.0509 & 0.874 & 3.17 & 0.272 & 0.288 \\
+ReLU & active & 1 & 0.786 & 0.51 & 1.57 & 0.00955 & 0.0509 & 1.73 & 3.17 & 0.501 & 0.301 \\
+ReLU & active & 4 & 0.765 & 0.815 & 1.57 & 0.00955 & 0.043 & 2.43 & 3.17 & 0.558 & 0.338 \\
+ReLU & inactive & 0.25 & 1.69 & 0.798 & 4.06 & 0.115 & 0.218 & 3.14 & 7.63 & 0.84 & 0.725 \\
+ReLU & inactive & 1 & 0.862 & 0.803 & 2.26 & 0.0792 & 0.127 & 2.41 & 4.12 & 0.746 & 0.343 \\
+ReLU & inactive & 4 & 0.603 & 1.07 & 1.82 & 0.0674 & 0.0931 & 2.38 & 3.51 & 0.653 & 0.307 \\
+\bottomrule
+\end{tabular}

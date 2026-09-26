@@ -1,0 +1,20 @@
+\begin{tabular}{llcccc}
+\toprule
+Case & Method & Internal err & External err & Norm & LN better ext. \\
+\midrule
+encoder $=A^{+}$ & decoder & 0.221 & 0.221 & 1 &  \\
+ & decoder\_rescaled & 0.222 & 0.222 & 1.04 &  \\
+ & encoder\_grad & 0.283 & 0.283 & 0.88 &  \\
+ & jacobian\_ln & $<\!10^{-6}$ & $<\!10^{-6}$ & 1 & 20/20 \\
+\midrule
+decoder $=A$ & decoder & 0.242 & $<\!10^{-6}$ & 1 &  \\
+ & decoder\_rescaled & 0.226 & 0.0708 & 0.997 &  \\
+ & encoder\_grad & 0.362 & 0.33 & 0.846 &  \\
+ & jacobian\_ln & $<\!10^{-6}$ & 0.239 & 0.964 & 0/20 \\
+\midrule
+both noisy & decoder & 0.313 & 0.223 & 1 &  \\
+ & decoder\_rescaled & 0.306 & 0.241 & 1.06 &  \\
+ & encoder\_grad & 0.367 & 0.334 & 0.845 &  \\
+ & jacobian\_ln & $<\!10^{-6}$ & 0.223 & 0.986 & 11/20 \\
+\bottomrule
+\end{tabular}

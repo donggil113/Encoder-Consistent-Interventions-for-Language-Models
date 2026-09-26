@@ -1,6 +1,9 @@
 # RESEARCH_PACKET — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-09-26 (first run). Config: `configs/p3_first_run.json` (`p3_first_run_v2`).
+Last updated: 2026-09-26 (second session: real-model adapters and protocols, manuscript v1).
+Toy config: `configs/p3_first_run.json` (`p3_first_run_v2`).
+Real-model configs: `configs/p3_contract_gpt2_res_jb_l8.json`, `configs/p3_real01r.json`,
+`configs/p3_real02.json`.
 Evidence: `results/summary.json`, `results/raw/*.csv`, `run_manifest.json`.
 
 Status labels: **PROVED** (a complete argument is written here or is textbook with a
@@ -19,6 +22,9 @@ reference), **CHECKED** (numerical or unit-test agreement only; not a proof),
 | Toy verification identities V1–V5, V7, T3 (8 checks) | CHECKED, all PASS (`run_manifest.json → verification`) |
 | V6 (ReLU piece exactness) | PROVED (§3 P5) and CHECKED (550 no-crossing rows, max error 3.3e-15) |
 | V8 (internal vs external transfer, synthetic proxy) | OBSERVED_IN_TOY (descriptive) |
+| Model–SAE contract (GPT-2 small + res-jb L8) | Verified from source (pinned configs, SAELens@ef4c208, TransformerLens@24b039f). C1 was **executed** on the verbatim configs and passes. C2 is inferred from file size (header not read). C3/C4 are **NOT_RUN**. |
+| REAL-01R / REAL-02 adapters and CLIs | Written. The stdlib parts are unit-tested (38 tests: 37 pass, 1 torch test skipped). The torch parts are **NOT_RUN**. The `check-env` stage recorded `BLOCKED_DEPENDENCIES`. |
+| Manuscript v1 (`paper/main.tex`) | All sections written. **COMPILE_NOT_RUN** (no LaTeX). Static checks pass. `SUBMISSION_READY=false`. |
 | Novelty of the correction as a solver | **None claimed.** In the linear case it is a standard least-norm / minimum-norm least-squares solve. Its protected-set projector `I − Jᵀ(JJᵀ)†J` on SAE encoder readouts is already published (Cui et al. 2026, arXiv:2606.18322). SAE-TS reports that a pseudo-inverse did worse than its heuristic. "Encoder–decoder misalignment" has already been named as a cause of SAE steering failure (GLP, arXiv:2602.06964). See `RELATED_WORK.md` §6. |
 
 ---
@@ -208,11 +214,14 @@ Setting: d=16, m=64, interpolated encoder. The median active count is 13 for ReL
   unprotected features: median 13–23 crossings for `jacobian_ln` against 9.5–26 for
   rescaled. `jacobian_ln` also has a larger norm: median norm ratio 3.0–7.6, against
   1.5–4.1 for rescaled.
-- `jacobian_ln_repair` "converges" in 100% of ReLU/JumpReLU cells, but it converges by
-  giving up the target (median target error 0.23–0.84, leaving out the range-infeasible
-  JumpReLU cell). For TopK it converges in
-  0–88% of cells, because eviction is rank-based and equality constraints cannot
-  prevent it (P7).
+- `jacobian_ln_repair` reaches a crossing-free edit in **72–80 of 80 rows** per ReLU or
+  JumpReLU cell, but it does so by giving up the target (median target error 0.23–0.84,
+  leaving out the range-infeasible JumpReLU cell). For TopK it reaches one in only
+  **2–66 of 80 rows** per cell, because eviction is rank-based and equality constraints
+  cannot prevent it (P7).
+  - *Correction (second session):* the first-session text said "100% of ReLU/JumpReLU
+    cells" and "0–88%". Those were medians of per-instance rates, not row counts. They
+    were re-aggregated from the unchanged raw CSV by `src/saeedit/paper_assets.py`.
 - `jacobian_local_naive` never moves an inactive target (target error 1.0; P5
   corollary).
 - JumpReLU, inactive target, α=0.25 < θ=0.3: the target is range-infeasible in all
@@ -221,6 +230,15 @@ Setting: d=16, m=64, interpolated encoder. The median active count is 13 for ReL
   norm in 15–20/20 instances for ReLU/JumpReLU (except ReLU inactive α=4: 10/20). This
   comparison is **circular**: the trust region minimises exactly the internal metric
   being scored.
+
+- **Re-aggregated with the drift decomposition** (`paper/tables/tab_activeset_relu.tex`).
+  With P = the active set, the toy's protected and unprotected leakage are exactly
+  `D_orig` and `D_new` (unit test `TestDrift`).
+  - At ReLU, active target, α=1, the rescaled decoder has `D_orig` 0.786 and `D_new` 0.51.
+  - `jacobian_ln` has `D_orig` 0.051, which is nonzero only because some rows are
+    infeasible, and `D_new` **1.73**.
+  - So the correction moves drift onto newly activated features. This is the same pattern
+    as linear R4b/R5.
 
 ### 4.3 Exploratory sparsity axis (`P3-T4b-SPARSITY-EXPLORATORY`; added after dev inspection, not pre-registered)
 
@@ -263,7 +281,65 @@ says nothing about which case real SAEs are in.
 
 ---
 
-## 5. Protocol for the real evaluation (specified, NOT_RUN)
+## 5. Protocols for the real evaluation (specified, NOT_RUN)
+
+### 5.1 Current: `P3-REAL-01R` (fidelity) — `configs/p3_real01r.json`
+
+- **Units and splits.** The unit is the **test document**. WikiText-103 validation
+  articles are calibration and test articles are test. Documents are split *before*
+  windows (BOS + 127 tokens) are made. An overlap check aborts the run if a title or a
+  window appears in both splits. The document count is not verified; below 40 the run is
+  BLOCKED.
+- **Calibration only, frozen with sha256.**
+  - Feature pool: firing density in [1e-4, 1e-2]. 64 features are sampled with seed 0.
+  - Target-change doses: activation quantiles q50/q90/q99 and 2×q99. `a_max` is recorded
+    but not used.
+  - Norm budgets: {0.025, 0.05, 0.1, 0.2} × the median centred residual norm.
+  - The timing smoke uses calibration documents only and chooses N ∈ {8, 16, 32} by
+    projected budget.
+- **Methods.**
+  - no_edit;
+  - decoder;
+  - weight-only calibration-rescaled decoder (unmatched, deployable);
+  - encoder_grad;
+  - `jacobian_ln` (P = active set);
+  - random.
+- **Modes.** Equal-norm and target-matched. For ReLU the target-matched scale has a closed
+  form, and rows without a solution are recorded as `INFEASIBLE` rather than dropped.
+- **Metrics.**
+  - target change and error;
+  - `D_kept`, `D_deact`, `D_orig`, `D_new`, `D_all` (relative);
+  - counts;
+  - edit norm and the mean(δ) component;
+  - KL(P_clean‖P_edit) and ΔNLL over 16 positions;
+  - solve and forward seconds;
+  - peak RSS.
+- **Uncertainty.** Document-cluster bootstrap (2000 resamples).
+- **Gates.** The G1–G3 text is preserved verbatim. Each is read at q99 as an interval
+  with the outcome STOP_SIDE, CONTINUE_SIDE or INCONCLUSIVE. These are operational rules,
+  not significance tests. A large crossing share ends the *method claim*, not the
+  measurement study.
+- **Boundary conventions.**
+  - JumpReLU (not used by this SAE): `a = p·1[p>θ]`, strict.
+  - TopK: stable sort by (−p, index); positive values only; displacement counted.
+- **SAE-TS / FGAA.** NOT_RUN baselines: they need a fitted effect model built from many
+  steering runs.
+
+### 5.2 Current: `P3-REAL-02` (behaviour) — `configs/p3_real02.json`
+
+- **Task.** Benign wedding-topic steering. The label is ActAdd's keyword list (verified in
+  the source text), counted only in the continuation. The SAE is never used for the label.
+- **Chosen on calibration data only:**
+  - the feature, as the largest activation difference between windows with and without
+    keyword hits (BLOCKED if fewer than 20 hit windows);
+  - the DiffMean vector;
+  - each method's budget, as the largest budget with KL ≤ 0.1 nats.
+- **Test.** Neutral prompts (zero hits), greedy decoding of 32 tokens, the edit at all
+  positions. Success is paired by document, with bootstrap intervals.
+- **Support rule.** The method is supported only if `jacobian_ln` beats decoder,
+  encoder_grad and DiffMean at matched calibration KL with intervals excluding 0.
+
+### 5.3 Superseded first-session protocol (kept for the record)
 
 **Units and splits.** The independent unit for behaviour is a (feature/concept,
 prompt-template) pair. Split *features* into dev and test, and split prompt templates
@@ -303,7 +379,8 @@ margin.
 
 ## 6. Next decision experiment (proposed, needs approval)
 
-**`P3-REAL-01` — mismatch-prevalence gate on one public SAE.** No behaviour
-evaluation. Details are in `STATUS.md → Next decision`. Its only possible outcomes are:
-**STOP** the method claim (if post-rescale protected leakage is small, or crossings
-dominate), or **PROCEED** to `P3-REAL-02`. It cannot, by itself, support the method.
+**`P3-REAL-01R`** runs the stages `contract → calibrate → smoke → run → summarize` from
+`configs/p3_real01r.json`. Its outcome decides whether P3-REAL-02 is run as a method test,
+so it can only STOP or PROCEED; it cannot support the method. It is also the measurement
+study on its own terms. The superseded P3-REAL-01 design is in `STATUS.md` §6 of the first
+session (git history, commit 7c46116).
