@@ -1,0 +1,304 @@
+{
+  "config_id": "p3_first_run_v2",
+  "project": "P3: Do SAE Edits Change What They Claim?",
+  "frozen_before_run": true,
+  "frozen_note": "Hypotheses, metrics, units, budget and stop conditions below were written before the first execution on the reported seeds. Any later change must bump config_id and be logged in STATUS.md.",
+  "scope": {
+    "what_this_run_is": "CPU-only synthetic toy: implementation checks of edit mismatch, least-norm correction, feasibility, ReLU/JumpReLU/TopK active-set behaviour, norm budget, and rescaling-vs-interference separation.",
+    "what_this_run_is_not": "No language model, no public SAE, no behavioural evaluation. Nothing here tests the main scientific hypothesis H_MAIN; toy outcomes are mostly fixed by linear algebra and serve as code verification and as a map of failure modes.",
+    "H_MAIN": "For public LM SAEs, the gap between intended and SAE-re-encoded feature change of a decoder edit predicts external steering failure on held-out prompts, and a local target/protected correction reduces that failure beyond norm-matched rescaling at equal or lower quality loss.",
+    "H_MAIN_status": "NOT_RUN"
+  },
+  "budget": {
+    "cpu_threads_max": 2,
+    "wall_clock_seconds_max": 120,
+    "note": "Pure-Python stdlib implementation (numpy/torch are not installed and installation is not approved), so execution is single-threaded. If the wall clock is exceeded, remaining experiments are recorded as NOT_RUN (TIMEOUT), never as PASS."
+  },
+  "seeds": {
+    "independent_unit": "toy instance = one random draw of (decoder, encoder, bias) for a regime. Base points and target features inside one instance are NOT independent; they are averaged within an instance first.",
+    "dev_seeds": [
+      0,
+      1,
+      2
+    ],
+    "dev_seed_note": "Used only while writing and debugging code. Not reported.",
+    "report_seeds_start": 1000,
+    "n_report_instances": 20
+  },
+  "numerics": {
+    "pinv_rtol": 1e-10,
+    "identity_tol": 1e-08,
+    "cgls_rel_tol": 1e-12,
+    "cgls_max_iter_factor": 4,
+    "crossing_eps": 1e-12
+  },
+  "T2_T5_linear_regimes": {
+    "experiment_ids": [
+      "P3-T2-MISMATCH",
+      "P3-T5-RESCALE-VS-INTERF"
+    ],
+    "activation": "identity",
+    "alpha": 1.0,
+    "alpha_note": "Encoder is linear, so every quantity scales linearly in alpha; one alpha suffices.",
+    "regimes": [
+      {
+        "name": "R0_pinv_undercomplete",
+        "d": 16,
+        "m": 8,
+        "decoder": "equiangular",
+        "coherence": 0.3,
+        "encoder": "pinv",
+        "protect": "all"
+      },
+      {
+        "name": "R1_scaled_orthogonal",
+        "d": 16,
+        "m": 8,
+        "decoder": "orthonormal",
+        "encoder": "scaled_tied",
+        "scale_range": [
+          0.5,
+          2.0
+        ],
+        "protect": "all"
+      },
+      {
+        "name": "R2_tied_coherent",
+        "d": 16,
+        "m": 8,
+        "decoder": "equiangular",
+        "coherence": 0.3,
+        "encoder": "tied",
+        "protect": "all"
+      },
+      {
+        "name": "R3_scaled_tied_coherent",
+        "d": 16,
+        "m": 8,
+        "decoder": "equiangular",
+        "coherence": 0.3,
+        "encoder": "scaled_tied",
+        "scale_range": [
+          0.5,
+          2.0
+        ],
+        "protect": "all"
+      },
+      {
+        "name": "R4a_overcomplete_tied_protect_all",
+        "d": 16,
+        "m": 48,
+        "decoder": "gaussian",
+        "encoder": "tied",
+        "protect": "all"
+      },
+      {
+        "name": "R4b_overcomplete_tied_protect_subset",
+        "d": 16,
+        "m": 48,
+        "decoder": "gaussian",
+        "encoder": "tied",
+        "protect": "subset",
+        "protect_size": 7
+      },
+      {
+        "name": "R5_overcomplete_pinv_protect_subset",
+        "d": 16,
+        "m": 48,
+        "decoder": "gaussian",
+        "encoder": "pinv",
+        "protect": "subset",
+        "protect_size": 7
+      }
+    ],
+    "targets_per_instance": 8,
+    "methods": [
+      "decoder",
+      "decoder_rescaled",
+      "encoder_grad",
+      "jacobian_ln",
+      "jacobian_ln_cgls",
+      "jacobian_ln_normmatched",
+      "trust_region_normmatched",
+      "random_normmatched"
+    ],
+    "primary_metrics": [
+      "target_rel_err",
+      "leak_rel_all",
+      "norm_ratio"
+    ],
+    "secondary_metrics": [
+      "leak_rel_protected",
+      "leak_rel_unprotected",
+      "residual_rel",
+      "n_jvp",
+      "n_vjp",
+      "mismatch_diag_share"
+    ]
+  },
+  "T3_feasibility": {
+    "experiment_id": "P3-T3-FEASIBILITY",
+    "checks": [
+      "full_rank_least_norm: random M (k x d, k<=d) -> residual ~0, solution in row space, Pythagorean minimality against null-space perturbations, CGLS == dense within 1e-6 relative",
+      "rank_deficient_infeasible: k>d or random target outside range(M) -> residual>0, Fredholm certificate r=t-M x* satisfies M^T r ~ 0 and r.t = ||r||^2 > 0",
+      "low_rank_rows: k<=d rows of rank r<k, random target -> infeasible with certificate",
+      "rank_deficient_feasible_control: t in range(M) with k>d -> residual ~0",
+      "duplicate_rows_conflict: two identical encoder rows with targets (+alpha, 0) -> infeasible for every d, residual = alpha/sqrt(2)",
+      "range_infeasible_relu: requested post-activation < 0 is unattainable",
+      "range_infeasible_jumprelu: requested post-activation in (0, theta] is unattainable",
+      "topk_eviction: activating an inactive target under TopK with exactly k positive active features must deactivate at least one other feature"
+    ],
+    "k_values": [
+      4,
+      8,
+      12,
+      16
+    ],
+    "k_infeasible_values": [
+      20,
+      32
+    ],
+    "d": 16,
+    "n_nullspace_probes": 50,
+    "low_rank_case": {
+      "k": 8,
+      "r": 5
+    },
+    "n_trials_per_check": 20
+  },
+  "T4_activeset_norm": {
+    "experiment_id": "P3-T4-ACTIVESET-NORM",
+    "d": 16,
+    "m": 64,
+    "decoder": "gaussian",
+    "encoder": "interp",
+    "encoder_beta": 0.5,
+    "encoder_beta_note": "E = (1-beta) D^T + beta D^+, rows rescaled by log-uniform factors in scale_range: an encoder that is neither tied nor biorthogonal.",
+    "scale_range": [
+      0.7,
+      1.4
+    ],
+    "bias": -0.25,
+    "base_point_support": 3,
+    "base_point_coef_range": [
+      0.5,
+      1.5
+    ],
+    "base_point_noise": 0.02,
+    "base_points_per_instance": 4,
+    "activations": [
+      {
+        "name": "relu"
+      },
+      {
+        "name": "jumprelu",
+        "theta": 0.3,
+        "bias": 0.0
+      },
+      {
+        "name": "topk",
+        "k": 6,
+        "bias": 0.0
+      }
+    ],
+    "target_kinds": [
+      "active_increase",
+      "inactive_activate"
+    ],
+    "alpha_values": [
+      0.25,
+      1.0,
+      4.0
+    ],
+    "methods": [
+      "decoder",
+      "decoder_rescaled",
+      "encoder_grad",
+      "jacobian_local_naive",
+      "jacobian_ln",
+      "jacobian_ln_repair",
+      "jacobian_ln_normmatched",
+      "trust_region_normmatched",
+      "random_normmatched"
+    ],
+    "repair_max_iters": 3,
+    "norm_budget_multipliers": [
+      0.5,
+      1.0,
+      2.0
+    ],
+    "primary_metrics": [
+      "target_rel_err",
+      "leak_rel_all",
+      "n_crossings",
+      "local_pred_exact",
+      "norm_ratio"
+    ],
+    "protect_rule": "P = features active at the base point, excluding the target"
+  },
+  "TX_external_proxy": {
+    "experiment_id": "P3-TX-EXTPROXY",
+    "description": "Synthetic ground-truth dictionary A defines an external readout z_true(x) = A^+ x. The SAE (D, E) is a noisy estimate of (A, A^+). Tests whether internal (SAE-encoder) consistency transfers to the external readout. This is a constructed proxy, NOT a behavioural evaluation.",
+    "d": 16,
+    "m": 8,
+    "coherence": 0.3,
+    "noise_sigma": 0.3,
+    "cases": [
+      "encoder_accurate",
+      "decoder_accurate",
+      "both_noisy"
+    ],
+    "methods": [
+      "decoder",
+      "decoder_rescaled",
+      "encoder_grad",
+      "jacobian_ln"
+    ],
+    "targets_per_instance": 8,
+    "primary_metrics": [
+      "ext_target_rel_err",
+      "ext_leak_rel",
+      "int_target_rel_err",
+      "int_leak_rel"
+    ]
+  },
+  "verification_hypotheses": {
+    "note": "V1-V5 and V7 are mathematical identities; failing any of them means an implementation bug, not a finding. V6 and V8 are descriptive checks whose outcomes are reported as observed.",
+    "V1": "R0 (E = D^+, m<=d): decoder edit has target_rel_err and leak_rel_all <= identity_tol, and jacobian_ln equals the decoder edit within identity_tol (relative).",
+    "V2": "R1 (orthonormal D, E = diag(s) D^T): decoder_rescaled has target_rel_err and leak_rel_all <= identity_tol and equals jacobian_ln within identity_tol.",
+    "V3": "R2 (tied, equiangular coherence c): decoder leak_rel_all = c*sqrt(m-1) within identity_tol; decoder_rescaled leaves the same leakage; jacobian_ln leakage <= identity_tol with norm_ratio = sqrt((G^-1)_jj) > 1.",
+    "V4": "R4a (m>d, protect all): target+protected system is infeasible (residual_rel > 1e-6) with a valid Fredholm certificate; R4b/R5 (|S u P| <= d): residual_rel <= identity_tol.",
+    "V5": "jacobian_ln_cgls (JVP/VJP only) matches dense jacobian_ln within 1e-6 relative in every linear regime.",
+    "V6": "ReLU: whenever no pre-activation changes sign along the segment, the local linear prediction is exact (<= identity_tol). Crossing rates vs alpha, and whether repair converges, are reported as observed.",
+    "V7": "Trust region: ||delta|| <= tau*(1+1e-9); if ||delta_ln|| <= tau the solution equals delta_ln.",
+    "V8": "External proxy: report whether jacobian_ln's internal improvement over decoder transfers to the external readout in each case. Expected by construction: transfers when the encoder is accurate, reverses when only the decoder is accurate."
+  },
+  "stop_conditions": {
+    "implementation": "If any of V1-V5, V7 fails, stop, fix the code, and do not interpret any toy number.",
+    "project_level": "In the later real evaluation: if the correction only improves the internal SAE-encoder metric, or is not distinguishable from norm-matched decoder rescaling on held-out external behaviour and quality, stop claiming a new steering method.",
+    "toy_level": "If in every toy regime the achieved mismatch is fully removed by decoder_rescaled (no residual interference), the correction has no toy-level reason to exist; record that and stop."
+  },
+  "changelog": [
+    "v1: initial pre-registration (hypotheses V1-V8, metrics, units, budget, stop conditions).",
+    "v1->v2 (after dev seeds 0-2 only, before any report-seed run): T3 CGLS tolerance made explicit (1e-6); low_rank_rows check added; T4b exploratory sparsity axis added because dev inspection showed the v1 T4 ReLU regime has 6-18 active features for d=16 (|S u P|/d = 0.4-1.1), far denser than public LM SAEs. v1 sections are unchanged and remain the primary pre-registered T4 result."
+  ],
+  "T4b_sparsity_exploratory": {
+    "experiment_id": "P3-T4b-SPARSITY-EXPLORATORY",
+    "status_label": "EXPLORATORY: added after dev-seed inspection; not part of the v1 pre-registration; descriptive only",
+    "inherits": "T4_activeset_norm (same d, m, encoder, base points, alphas, methods)",
+    "activations": [
+      {
+        "name": "relu",
+        "bias": -0.5,
+        "label": "relu_b-0.50"
+      },
+      {
+        "name": "relu",
+        "bias": -0.75,
+        "label": "relu_b-0.75"
+      }
+    ],
+    "question": "Does the relative ranking of jacobian_ln vs decoder_rescaled on leak_rel_all change when the active fraction |S u P|/d is lower?",
+    "no_further_sweeps": "No other axis will be added in this first run regardless of outcome."
+  }
+}
