@@ -1,0 +1,116 @@
+% Skeleton only. Every number must come from results/ with a run_manifest entry.
+% Places without results carry \todo{EXPERIMENT_ID}. Do not fill them by hand.
+\documentclass{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\title{Do Sparse Autoencoder Edits Change What They Claim?}
+\author{Anonymous}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Steering with a sparse autoencoder (SAE) typically adds a decoder direction to a
+model activation and describes the edit in terms of the edited feature. Re-encoding
+the edited activation with the same SAE shows what the edit changed in the SAE's own
+coordinates, and this can differ from the stated edit. We separate the part of this
+gap that a scalar rescaling removes from the part caused by interference between
+features. We also describe when a local, least-norm correction on a target and
+protected feature set is feasible.
+Whether this gap predicts external steering failures on held-out prompts is
+\todo{P3-REAL-02}.
+Whether the correction beats norm-matched rescaling on external behaviour and quality
+is \todo{P3-REAL-02}.
+\end{abstract}
+
+\section{Introduction}
+% Question, not a claim of success.
+Encoder--decoder misalignment has already been proposed as one cause of SAE steering
+failure (Section~\ref{sec:related}). We ask whether the gap between an SAE decoder
+edit's intended feature change and the
+change the SAE encoder reports:
+(i) is mostly a scale error or mostly interference between features,
+\todo{P3-REAL-01};
+(ii) predicts external steering failure, \todo{P3-REAL-02}; and
+(iii) is reduced by a local correction more than by rescaling at equal norm and
+quality, \todo{P3-REAL-02}.
+In the linear case the correction is a standard least-norm solve. How it relates to
+subspace interventions and null-space-constrained editing is covered in
+Section~\ref{sec:related}; we do not claim the solver as new.
+
+\section{Setup}
+Encoder pre-activations $p(x)=Ex+b$ with $E\in\mathbb{R}^{m\times d}$, features
+$a=\sigma(p)$, decoder $D\in\mathbb{R}^{d\times m}$. A decoder edit on feature $j$ is
+$\delta_{\mathrm{dec}}=\alpha De_j$. Target set $S=\{j\}$, protected set $P$ (features
+active at $x$, excluding $j$), constraint matrix $M=E_{S\cup P}$, and target vector
+$t=(\Delta p_j^{\mathrm{req}},0,\dots,0)$.
+
+\section{What the linear algebra already says}
+\begin{proposition}[Mismatch decomposition]
+For a linear encoder, $\Delta a=\alpha EDe_j$. Rescaling fixes the target coordinate
+exactly when $(ED)_{jj}\neq 0$. It removes all leakage on $P$ if and only if
+$(ED)_{Pj}=0$.
+\end{proposition}
+\begin{proposition}[Feasibility]
+$M\delta=t$ is solvable iff $t\perp\ker M^\top$. If it is solvable, the least-norm
+solution is $M^{+}t$. If it is not, $r=t-MM^{+}t$ satisfies $M^\top r=0$ and
+$r^\top t=\|r\|^2>0$.
+\end{proposition}
+\begin{proposition}[ReLU piece exactness]
+If no pre-activation changes sign between $x$ and $x+\delta$, then
+$\Delta a=\mathrm{diag}(\mathbb{1}[p>0])E\delta$ exactly. With protected
+pre-activations held fixed, leakage can only come from inactive features that cross
+zero.
+\end{proposition}
+\begin{remark}
+For JumpReLU and TopK, the a.e.\ derivative ignores the jumps. It is a local
+derivative, not a global inverse: JumpReLU cannot reach values in $(0,\theta]$, and
+under TopK with $k$ active features an inactive target can only enter by evicting
+another feature.
+\end{remark}
+
+\section{Toy study}
+% Source: results/summary.json, run_manifest.json (config p3_first_run_v2).
+Controlled regimes separate no mismatch, pure scale mismatch (rescaling suffices), and
+pure interference (rescaling does nothing, and the correction removes it at a higher
+norm). They also cover infeasible protect-all systems and cases where protecting a
+subset moves leakage onto unprotected features. In a ReLU toy, the correction
+reduced total leakage relative to the rescaled decoder only when the active set was
+small relative to $d$ and edits were small. In a denser toy, threshold crossings
+dominated and the correction was worse. A synthetic external readout shows that
+internal consistency transfers only when the SAE encoder matches the external readout.
+All toy statements are illustrations, not evidence about language models.
+
+\section{Real evaluation}
+Model, SAE, revision, layer and width: \todo{P3-REAL-01}.
+Mismatch prevalence (scale vs.\ interference vs.\ crossings): \todo{P3-REAL-01}.
+Held-out external behaviour, quality loss, and norm--quality curves against decoder,
+rescaling, encoder-gradient, and norm-matched controls: \todo{P3-REAL-02}.
+Compute cost (JVP/VJP counts, wall clock): \todo{P3-REAL-02}.
+
+\section{Related work}\label{sec:related}
+% Source: RELATED_WORK.md (access levels recorded there). Bibliography not yet built.
+Several points are established and are not claimed here. Decoder steering has
+off-target effects: SAE-TS (arXiv:2411.02193) and FGAA (arXiv:2501.09929) solve for
+vectors that target SAE features, and SAE-TS reports that a pseudo-inverse of its
+effect map underperformed. Encoder and decoder directions differ: see work on
+absorption (arXiv:2409.14507) and on the amortisation gap (arXiv:2411.13117).
+Encoder--decoder misalignment has been named as one cause of SAE steering failure, next
+to off-manifold effects (arXiv:2602.06964). Least-norm readout edits and null-space
+protection are standard: DAS (arXiv:2303.02536), LoReFT (arXiv:2404.03592) and
+AlphaEdit (arXiv:2410.02355). The same Jacobian null-space projector on SAE encoder
+readouts has been used to show that behaviour can change while those readouts stay
+fixed (arXiv:2606.18322). Downstream side effects have been predicted from decoder
+geometry (arXiv:2606.08365, arXiv:2609.22782). Remaining questions:
+\todo{P3-REAL-01} (same-layer fidelity decomposition) and \todo{P3-REAL-02}
+(predictive value beyond decoder geometry; external benefit at matched quality).
+
+\section{Limitations}
+The toy results are mostly determined by construction. Internal SAE metrics cannot
+validate a method that optimizes them. \todo{P3-REAL-02}
+
+\end{document}

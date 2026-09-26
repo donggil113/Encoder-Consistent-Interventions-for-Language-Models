@@ -1,0 +1,125 @@
+{
+  "run_kind": "report",
+  "config_id": "p3_first_run_v2",
+  "config_path": "configs/p3_first_run.json",
+  "config_sha256": "90c7db4c7b00caf95b69c1851e0cc868ecb38168e06c557c321ce9aeb522a028",
+  "git": {
+    "commit": "46dbb2575fd95226cb63fdfd25ef38bf9c34909c",
+    "code_dirty": false,
+    "dirty_files": []
+  },
+  "started_unix": 1790433291.5806296,
+  "python": "3.11.15",
+  "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+  "dependencies": "python standard library only (numpy/torch not installed; installation not approved)",
+  "threads": {
+    "OMP_NUM_THREADS": "2",
+    "note": "pure Python, single-threaded"
+  },
+  "budget_seconds": 120,
+  "seeds": [
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    1006,
+    1007,
+    1008,
+    1009,
+    1010,
+    1011,
+    1012,
+    1013,
+    1014,
+    1015,
+    1016,
+    1017,
+    1018,
+    1019
+  ],
+  "data_models_saes": "none: fully synthetic toy; no dataset, language model or SAE weights used",
+  "H_MAIN": "NOT_RUN",
+  "experiments": {
+    "P3-T2-MISMATCH": {
+      "engineering_status": "RAN",
+      "wall_seconds": 9.076286792755127,
+      "n_rows": 8960,
+      "row_status_counts": {
+        "OK": 8960
+      },
+      "raw_file": "results/raw/linear_regimes.csv",
+      "raw_sha256": "5c39c040ea6f27d063daf05791ac9ee3f946862a6e764b325d7bf34823a6e310"
+    },
+    "P3-T3-FEASIBILITY": {
+      "engineering_status": "RAN",
+      "wall_seconds": 1.217719316482544,
+      "n_rows": 260,
+      "row_status_counts": {
+        "OK": 260
+      },
+      "raw_file": "results/raw/feasibility.csv",
+      "raw_sha256": "f09a2a5288f4be713f0eb40854fb31e7ab88568348f3837b6021f78b9173f803"
+    },
+    "P3-T4-ACTIVESET-NORM": {
+      "engineering_status": "RAN",
+      "wall_seconds": 50.405139207839966,
+      "n_rows": 15840,
+      "row_status_counts": {
+        "OK": 15840
+      },
+      "raw_file": "results/raw/activeset_norm.csv",
+      "raw_sha256": "3cba4082de407743cf3ee72cd1acf2e8019d9222ff8f8877a4ee4c22051f73b1"
+    },
+    "P3-TX-EXTPROXY": {
+      "engineering_status": "RAN",
+      "wall_seconds": 0.562262773513794,
+      "n_rows": 1920,
+      "row_status_counts": {
+        "OK": 1920
+      },
+      "raw_file": "results/raw/external_proxy.csv",
+      "raw_sha256": "02d8527118ff32f1d66be087a3eb4efc482483985bdb4c40e8a49bcd617c2f3e"
+    },
+    "P3-T4b-SPARSITY-EXPLORATORY": {
+      "engineering_status": "RAN",
+      "wall_seconds": 14.366897583007812,
+      "n_rows": 9536,
+      "row_status_counts": {
+        "OK": 9504,
+        "SKIP": 32
+      },
+      "raw_file": "results/raw/sparsity_exploratory.csv",
+      "raw_sha256": "1d27af0cc6cb804302c676cfa3a94624845378a9b7ed010ece3fc08b19631aeb"
+    }
+  },
+  "elapsed_seconds": 76.00005221366882,
+  "verification": {
+    "V1": "PASS",
+    "V2": "PASS",
+    "V3": "PASS",
+    "V4": "PASS",
+    "V5": "PASS",
+    "T3_checks": "PASS",
+    "V6": "PASS",
+    "V7": "PASS",
+    "V8": "DESCRIPTIVE"
+  },
+  "summary_file": "results/summary.json",
+  "summary_sha256": "a68509a3aee27f3d1e846f1740efd676ca4e9f8a71d5c35dbd3c15e00ea2583d",
+  "finished_unix": 1790433367.5806794,
+  "reproducibility": {
+    "first_report_run": {
+      "git_commit": "6bc3cf5b80ec22a157ba140910da24121c2d2bb6",
+      "code_dirty": false,
+      "elapsed_seconds": 77.02,
+      "note": "summary.json of this run had a boolean-aggregation bug; superseded"
+    },
+    "this_run": {
+      "git_commit": "46dbb2575fd95226cb63fdfd25ef38bf9c34909c",
+      "reason": "rerun after summary-only fix (commit 46dbb25)"
+    },
+    "raw_sha256_identical_across_runs": true
+  }
+}
