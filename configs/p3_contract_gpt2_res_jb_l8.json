@@ -1,0 +1,164 @@
+{
+  "contract_id": "gpt2-small__res-jb__blocks.8.hook_resid_pre",
+  "status": "SPECIFIED_FROM_SOURCE__NOT_EXECUTED",
+  "checked_on": "2026-09-26",
+  "model": {
+    "hf_repo": "openai-community/gpt2",
+    "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+    "license_card": "mit",
+    "dtype": "float32 (SAE cfg dtype; model loaded in float32)",
+    "file_sizes_bytes": {
+      "model.safetensors": 548105171,
+      "config.json": 665,
+      "generation_config.json": 124,
+      "tokenizer.json": 1355256,
+      "tokenizer_config.json": 26,
+      "vocab.json": 1042301,
+      "merges.txt": 456318
+    },
+    "config_verified": {
+      "model_type": "gpt2",
+      "n_embd": 768,
+      "n_layer": 12,
+      "n_head": 12,
+      "n_positions": 1024,
+      "layer_norm_epsilon": 1e-05,
+      "vocab_size": 50257,
+      "bos_token_id": 50256,
+      "eos_token_id": 50256,
+      "activation_function": "gelu_new"
+    },
+    "source": "https://huggingface.co/api/models/openai-community/gpt2?blobs=true ; config.json at the pinned revision"
+  },
+  "sae": {
+    "hf_repo": "jbloom/GPT2-Small-SAEs-Reformatted",
+    "revision": "57d08a4fd333fbf18caf3fbea63ceeb88e2f50d9",
+    "folder": "blocks.8.hook_resid_pre",
+    "license_card": "mit",
+    "library_name_card": "saelens",
+    "file_sizes_bytes": {
+      "blocks.8.hook_resid_pre/cfg.json": 1274,
+      "blocks.8.hook_resid_pre/sae_weights.safetensors": 151096640,
+      "blocks.8.hook_resid_pre/sparsity.safetensors": 98384
+    },
+    "cfg_json_verified": {
+      "model_name": "gpt2-small",
+      "hook_point": "blocks.8.hook_resid_pre",
+      "hook_point_layer": 8,
+      "hook_point_head_index": null,
+      "d_in": 768,
+      "d_sae": 24576,
+      "expansion_factor": 32,
+      "dtype": "torch.float32",
+      "context_size": 128,
+      "dataset_path": "Skylion007/openwebtext",
+      "b_dec_init_method": "geometric_median",
+      "l1_coefficient": 8e-05
+    },
+    "cfg_json_absent_fields": [
+      "activation_fn / activation_fn_str",
+      "apply_b_dec_to_input",
+      "normalize_activations",
+      "prepend_bos",
+      "architecture"
+    ],
+    "saelens_defaults_for_pre_6_0_configs": {
+      "activation_fn": "relu",
+      "architecture": "standard",
+      "apply_b_dec_to_input": true,
+      "normalize_activations": "none",
+      "prepend_bos": true,
+      "finetuning_scaling_factor": false,
+      "source": "decoderesearch/SAELens@ef4c208dd597c03d3219e11c7d5e7cedb49e85b2 sae_lens/loading/pretrained_sae_loaders.py handle_pre_6_0_config (lines 227-270)"
+    },
+    "saelens_release_entry": {
+      "release": "gpt2-small-res-jb",
+      "conversion_func": null,
+      "config_overrides": {
+        "model_from_pretrained_kwargs": {
+          "center_writing_weights": true
+        }
+      },
+      "l0": 60.0,
+      "variance_explained": 0.9,
+      "source": "decoderesearch/SAELens@ef4c208 sae_lens/pretrained_saes.yaml lines 36055-36111"
+    },
+    "encode_decode_verified_from_code": {
+      "pre": "(x - b_dec * apply_b_dec_to_input) @ W_enc + b_enc",
+      "act": "ReLU(pre)",
+      "recon": "act @ W_dec + b_dec",
+      "source": "SAELens@ef4c208 sae_lens/saes/standard_sae.py encode/decode (lines 58-80); sae_lens/saes/sae.py process_sae_in (lines 475-485)"
+    },
+    "expected_tensors_INFERRED": {
+      "W_enc": [
+        768,
+        24576
+      ],
+      "W_dec": [
+        24576,
+        768
+      ],
+      "b_enc": [
+        24576
+      ],
+      "b_dec": [
+        768
+      ],
+      "dtype": "F32",
+      "basis": "file size 151,096,640 B = 4*(2*768*24576+24576+768) + 320 B header; key names from SAELens encode code. Must be confirmed by reading the safetensors header (contract.read_safetensors_header) before use."
+    },
+    "decoder_row_norms": "UNVERIFIED (not assumed unit norm; measured and recorded at run time)"
+  },
+  "hook": {
+    "tl_name": "blocks.8.hook_resid_pre",
+    "hf_equivalent": "GPT2Model hidden_states[8] = input to transformer.h[8]; edits via forward pre-hook on transformer.h[8]",
+    "coordinates": "TransformerLens with center_writing_weights=True centres W_E, W_pos, W_O, b_O, W_out, b_out (TransformerLens@24b039f25d4439db8d34e26d95358b62d6fb1a1d transformer_lens/weight_processing.py center_writing_weights, lines 1176-1384). DERIVATION (not executed): x_TL = h_HF - mean_d(h_HF). Edits are defined in TL coordinates: the SAE reads x_TL + delta; the model is run on h_HF + delta (LayerNorm removes the mean component, so downstream logits match TL up to a per-position constant).",
+    "tl_alias": "'gpt2' has alias 'gpt2-small' (TransformerLens@24b039f transformer_lens/tools/model_registry/data/model_aliases.json)",
+    "caveat": "The TransformerLens version used when the SAE was trained is not recorded in cfg.json; centering behaviour was verified only at TL HEAD 24b039f. Checked empirically by contract checks C3/C4 below (NOT_RUN)."
+  },
+  "tokenizer": {
+    "source": "openai-community/gpt2 tokenizer files at the pinned revision",
+    "prepend_bos": true,
+    "bos_token_id": 50256,
+    "window_tokens_including_bos": 128,
+    "bos_position_excluded_from_analysis": true
+  },
+  "data": {
+    "hf_repo": "Salesforce/wikitext",
+    "config": "wikitext-103-raw-v1",
+    "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+    "license_card": [
+      "cc-by-sa-3.0",
+      "gfdl"
+    ],
+    "file_sizes_bytes": {
+      "wikitext-103-raw-v1/validation-00000-of-00001.parquet": 657209,
+      "wikitext-103-raw-v1/test-00000-of-00001.parquet": 732610
+    },
+    "note": "SAE was trained on OpenWebText; WikiText is a distribution shift, recorded as such. Document counts per split are not verified here and are recorded at run time."
+  },
+  "total_listed_download_bytes": 703545978,
+  "python_dependencies_required": [
+    "torch (CPU)",
+    "transformers",
+    "safetensors",
+    "huggingface_hub",
+    "pyarrow"
+  ],
+  "python_dependencies_status": "NOT INSTALLED; installation not approved",
+  "cpu_time": "NOT ESTIMATED (requires the timing smoke stage)",
+  "contract_checks": {
+    "C1": "cfg.json fields equal cfg_json_verified",
+    "C2": "safetensors header has exactly W_enc, W_dec, b_enc, b_dec with expected shapes and F32",
+    "C3": "no-op forward pre-hook on transformer.h[8] (returns inputs unchanged) and a zero-delta hook give logits identical to the unhooked model (max |diff| == 0)",
+    "C4": "on calibration windows (non-BOS tokens), centred-coordinate SAE has L0 in [30, 120] and FVE >= 0.7 (reference values: L0 60, variance_explained 0.9 from the SAELens release entry); uncentred coordinates are recorded as a diagnostic",
+    "C5": "re-encoding the SAE reconstruction is recorded (diagnostic only)",
+    "on_failure": "BLOCKED: no fidelity or behaviour numbers are produced"
+  },
+  "unverified": [
+    "TransformerLens version at SAE training time",
+    "ReLU activation is a SAELens default, not stated in cfg.json",
+    "document counts of WikiText-103 validation/test",
+    "torch/transformers versions (not installed)"
+  ]
+}

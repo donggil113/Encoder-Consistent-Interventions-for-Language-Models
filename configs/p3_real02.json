@@ -1,0 +1,82 @@
+{
+  "config_id": "p3_real02_v1",
+  "experiment_id": "P3-REAL-02",
+  "status": "SPECIFIED; NOT_RUN (dependencies and downloads not approved; also gated on P3-REAL-01R readouts)",
+  "contract": "configs/p3_contract_gpt2_res_jb_l8.json",
+  "task": {
+    "name": "wedding-topic steering (benign)",
+    "label": "lexicon hits in the generated continuation only (prompt text excluded); success = at least one hit; rate = hits per word",
+    "lexicon": [
+      "wedding",
+      "weddings",
+      "wed",
+      "marry",
+      "married",
+      "marriage",
+      "bride",
+      "groom",
+      "honeymoon"
+    ],
+    "lexicon_source": "Turner et al., Activation Addition (arXiv:2308.10248), App. H keyword list (checked in source text)",
+    "label_independence": "the label never uses the SAE; the SAE is used only to choose the steered feature on calibration data"
+  },
+  "data": {
+    "calibration_documents": "WikiText-103 validation articles (contract revision)",
+    "test_documents": "WikiText-103 test articles",
+    "prompts": "windows (BOS + 127 tokens) whose decoded text has zero lexicon hits; prompt = BOS + first 31 tokens; at most 4 windows per document chosen with a seeded RNG",
+    "independent_unit": "test document"
+  },
+  "calibration_only_choices": {
+    "feature": "argmax over SAE features of mean activation on tokens of calibration windows with >= 1 lexicon hit minus mean activation on tokens of windows with 0 hits; top-5 recorded for sensitivity but not used",
+    "min_hit_windows": 20,
+    "if_fewer_hit_windows": "BLOCKED",
+    "diffmean_vector": "mean centred hook activation over tokens of hit windows minus mean over tokens of no-hit windows (calibration)",
+    "norm_budget_grid": "multipliers (norm_budget_multipliers) of the calibration median centred residual norm",
+    "matched_quality_rule": "for each method, the largest budget whose mean KL(P_clean || P_edited) on calibration prompts (edit at all positions) is <= kappa",
+    "kappa_nats": 0.1,
+    "norm_budget_multipliers": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.8
+    ]
+  },
+  "methods": {
+    "no_edit": "delta = 0",
+    "decoder": "rho * W_dec[j] / ||W_dec[j]|| at every position",
+    "encoder_grad": "rho * W_enc[:, j] / ||W_enc[:, j]|| at every position",
+    "jacobian_ln": "per position t: least-norm direction M_t^+ e_1 (M_t = encoder rows of j and of features active at t), scaled to rho",
+    "diffmean": "rho * v / ||v|| (calibration DiffMean), the simplest non-SAE baseline",
+    "random": "rho * r / ||r||, seeded Gaussian",
+    "not_run_baselines": [
+      "SAE-TS",
+      "FGAA (require a fitted effect model from many steering runs)"
+    ]
+  },
+  "generation": {
+    "new_tokens": 32,
+    "decoding": "greedy",
+    "edit_positions": "all positions, prompt and generated"
+  },
+  "metrics": {
+    "behaviour": [
+      "success",
+      "rate"
+    ],
+    "quality": [
+      "KL(P_clean || P_edited) averaged over prompt positions",
+      "NLL of the generated continuation under the unedited model (fluency proxy)"
+    ],
+    "internal_secondary": [
+      "NOT IMPLEMENTED in adapter v1 (planned: SAE re-encoded target change and non-target drift at prompt positions; never used as the label)"
+    ],
+    "cost": [
+      "seconds",
+      "peak_rss_kb"
+    ]
+  },
+  "primary_comparison": "per test document, success at each method's calibration-selected budget: jacobian_ln - decoder, jacobian_ln - diffmean, decoder - diffmean; document-cluster bootstrap 95% intervals. Also full success-vs-KL and success-vs-norm curves.",
+  "interpretation_rule": "The method claim is supported only if jacobian_ln beats decoder, encoder_grad and diffmean on held-out success at matched calibration KL with intervals excluding 0. Anything else (including internal-metric-only gains) is reported as not supported.",
+  "cli": "PYTHONPATH=src python3 -m saeedit.real.real02 <stage> --config configs/p3_real02.json --out results/real02"
+}

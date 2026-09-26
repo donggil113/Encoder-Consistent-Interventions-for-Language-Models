@@ -1,0 +1,87 @@
+{
+  "config_id": "p3_real01r_v1",
+  "experiment_id": "P3-REAL-01R",
+  "status": "SPECIFIED; NOT_RUN (dependencies and downloads not approved)",
+  "supersedes": "P3-REAL-01 design in STATUS.md (first session). The original text is preserved below; the changes are listed in 'revisions_vs_real01'.",
+  "contract": "configs/p3_contract_gpt2_res_jb_l8.json",
+
+  "question": "For decoder edits of a public ReLU SAE at a fixed layer, how does the SAE-re-encoded change split into target change, drift on originally active non-target features, drift from newly activated/deactivated features, and total non-target drift, as a function of dose, for active vs inactive targets, and how do simple alternatives compare at equal norm and at matched achieved target change?",
+  "what_this_cannot_show": "Anything about external behaviour or external control. All metrics except quality are computed with the same SAE encoder the correction uses; improvements in them are not evidence of external control.",
+
+  "revisions_vs_real01": [
+    "Independent unit is the test DOCUMENT, not the feature. Calibration and test are split at the document level before windows are made.",
+    "a_max is replaced by calibration-only activation quantiles; norm budgets come from calibration residual norms. Doses are frozen before any test window is encoded.",
+    "Features are sampled from a calibration-only pool before test data is touched; no feature or dose is chosen from test results.",
+    "G1-G3 are kept verbatim but read as regime-wise curves, paired differences and document-cluster bootstrap intervals; they are operational gates for P3-REAL-02, not significance tests. A large crossing share does not end the measurement study.",
+    "Equal-norm comparisons and achieved-target-matched comparisons are reported separately; rows that cannot be matched are kept with status INFEASIBLE."
+  ],
+  "real01_gate_text_verbatim": {
+    "G1": "the rescaled decoder's protected leakage is < 0.1·α;",
+    "G2": "crossing leakage ≥ protected leakage for the rescaled decoder;",
+    "G3": "`jacobian_ln` total leakage ≥ the rescaled decoder's in ≥ 50% of features.",
+    "original_condition": "STOP the method claim if any of the following holds at α ≥ 1·a_max (median over test features)"
+  },
+  "gate_reinterpretation": {
+    "dose_for_gates": "alpha = q99 target-change dose (replaces 1·a_max)",
+    "G1_readout": "curve of median (over documents) drift_orig_active_rel for calibration-rescaled decoder vs dose, with 95% document-cluster bootstrap interval; gate reads the interval at q99 against 0.1",
+    "G2_readout": "per-document paired difference drift_newly_active_rel - drift_orig_active_rel for calibration-rescaled decoder at q99; bootstrap interval",
+    "G3_readout": "per-document paired difference drift_all_nontarget_rel(jacobian_ln) - drift_all_nontarget_rel(decoder, target-matched) at q99; bootstrap interval; also the fraction of (document, feature) pairs where the difference is >= 0",
+    "decision": "If a gate condition holds with its whole interval on the STOP side, do not run P3-REAL-02 as a method test; still report the measurement study. If intervals straddle the threshold, record INCONCLUSIVE and do not treat it as PASS.",
+    "not_a_test": "These readouts are operational decision rules. They are not significance, equivalence or novelty tests."
+  },
+
+  "data": {
+    "source": "Salesforce/wikitext wikitext-103-raw-v1 at the contract revision",
+    "calibration_documents": "all articles in the validation parquet",
+    "test_documents": "all articles in the test parquet",
+    "document_segmentation": "a new article starts at a line matching ^ = [^=].* = $ (level-1 heading)",
+    "overlap_check": "abort if any title or any 128-token window hash occurs in both splits",
+    "windows": "tokenize each document, split into consecutive 127-token chunks, prepend BOS (id 50256) -> 128-token windows; drop the last chunk if shorter than 64 tokens",
+    "positions": "BOS position excluded; positions sampled with a seeded RNG per (document, feature, target_kind)",
+    "min_test_documents": 40,
+    "if_fewer_test_documents": "BLOCKED"
+  },
+
+  "calibration_only": {
+    "feature_pool": "features with calibration firing density in [1e-4, 1e-2] over non-BOS calibration tokens",
+    "n_features": 64,
+    "feature_sampling_seed": 0,
+    "target_change_doses": {"quantiles_of_positive_calibration_activations": [0.5, 0.9, 0.99], "extra": "2 x q99"},
+    "norm_budget_doses": {"reference": "median L2 norm of centred calibration residuals at the hook (non-BOS)", "multipliers": [0.025, 0.05, 0.1, 0.2]},
+    "freeze": "results/real01r/calibration_frozen.json with sha256 recorded in the run manifest; the run stage refuses to start if the file hash differs or if any test document was read during calibration"
+  },
+
+  "test_sampling": {
+    "per_feature": "up to N_docs test documents where the feature is active at some non-BOS position (active-target rows; position = a seeded choice among active positions) and N_docs documents where it is inactive at the sampled position (inactive-target rows)",
+    "N_docs_choice": "largest value in [8, 16, 32] whose projected wall clock from the timing smoke (calibration windows only) fits the budget; chosen before any test window is encoded",
+    "note": "active-target rows condition on the pre-edit state of the test point only, never on outcomes"
+  },
+
+  "methods": {
+    "no_edit": "delta = 0 (anchors quality metrics)",
+    "decoder": "delta = s * W_dec[j]",
+    "decoder_calib_rescaled": "delta = (alpha / (W_enc[:,j] . W_dec[j])) * W_dec[j]; weight-only coefficient, no test information; INFEASIBLE if the denominator <= 0",
+    "encoder_grad": "delta = s * W_enc[:,j]",
+    "jacobian_ln": "delta = M^+ t with M = W_enc[:, S u P]^T, P = non-target features active at the test point, t = (dp_req, 0, ..., 0); least-norm solve on |S u P| x 768",
+    "random": "delta = s * r, r Gaussian with a seed per row (sanity control)",
+    "not_included": "SAE-TS / FGAA need a fitted effect model from many steering runs (not reproducible within this CPU budget); recorded as NOT_RUN baselines. DiffMean needs a concept label and belongs to P3-REAL-02."
+  },
+  "comparison_modes": {
+    "equal_norm": "each direction u is scaled to ||delta|| = rho (norm-budget doses) with the sign chosen so that W_enc[:,j] . delta > 0; jacobian_ln uses its least-norm direction scaled to rho",
+    "target_matched": "for each target-change dose alpha, a scalar s >= 0 is solved so the achieved post-activation change on j equals alpha (closed form for ReLU: s = (a_j + alpha - p_j) / (W_enc[:,j] . u)); jacobian_ln matches by construction; decoder_calib_rescaled is reported unmatched (deployable baseline). Rows where no s >= 0 exists are kept with status INFEASIBLE and a reason."
+  },
+  "coordinates": "edits are defined in TransformerLens (centred) coordinates; the SAE reads x + delta; the model runs on h + delta; mean(delta) is recorded (contract file, 'hook.coordinates')",
+
+  "metrics_per_row": {
+    "target": ["target_change", "target_err_rel", "target_active_before", "target_active_after"],
+    "drift_decomposition_relative_to_alpha_or_rho": ["drift_orig_active_kept", "drift_deactivated", "drift_orig_active (kept+deactivated, l2)", "drift_newly_active", "drift_all_nontarget"],
+    "counts": ["n_orig_active", "n_newly_active", "n_deactivated"],
+    "edit": ["edit_norm", "delta_mean_component", "solve_seconds", "rank", "residual_rel"],
+    "quality": ["kl_next_token_mean over positions pos..pos+15 (edited vs clean)", "delta_nll_true_next_tokens over the same positions"],
+    "cost": ["forward_seconds", "peak_rss_kb"]
+  },
+  "uncertainty": "document-cluster bootstrap (2000 resamples, seed 0) over test documents for medians and paired differences; features are fixed effects",
+  "budget": {"hardware": "CPU only", "threads": 2, "wall_clock_minutes_max": 30, "downloads": "listed in the contract (703,545,978 bytes of model/SAE/data files) plus Python packages (sizes not verified)"},
+  "stages": ["check-env", "contract", "calibrate", "smoke", "run", "summarize"],
+  "cli": "PYTHONPATH=src python3 -m saeedit.real.real01r <stage> --config configs/p3_real01r.json --out results/real01r"
+}
