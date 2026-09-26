@@ -1,0 +1,90 @@
+{
+  "config_id": "p3_contract_exec_v2",
+  "experiment_id": "P3-CONTRACT-EXEC",
+  "frozen_before_run": true,
+  "purpose": "Execute the model-SAE contract for GPT-2 small + res-jb blocks.8.hook_resid_pre: verify that the HF shortcut used by the REAL-01R adapter reproduces the canonical TransformerLens + SAELens path for activations, SAE features, interventions and next-token distributions. Tolerances below are fixed before execution and are not changed after seeing results.",
+  "contract": "configs/p3_contract_gpt2_res_jb_l8.json",
+  "approval_note": "Executed after the user's instruction to run P3-CONTRACT-EXEC (2026-09-26), interpreted as approval of the resources listed in STATUS.md (CPU packages, 703,545,978 bytes of pinned model/SAE/data files).",
+  "fixed": {
+    "model": {
+      "hf_repo": "openai-community/gpt2",
+      "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+      "dtype": "float64",
+      "device": "cpu",
+      "threads": 2
+    },
+    "sae": {
+      "hf_repo": "jbloom/GPT2-Small-SAEs-Reformatted",
+      "revision": "57d08a4fd333fbf18caf3fbea63ceeb88e2f50d9",
+      "folder": "blocks.8.hook_resid_pre",
+      "saelens_release": "gpt2-small-res-jb",
+      "saelens_sae_id": "blocks.8.hook_resid_pre"
+    },
+    "layer": 8,
+    "hook": {
+      "tl": "blocks.8.hook_resid_pre",
+      "hf": "forward pre-hook on transformer.h[8] (input hidden_states); capture via output_hidden_states[8]"
+    },
+    "tokenizer": {
+      "source": "openai-community/gpt2 tokenizer at the pinned revision (passed explicitly to TransformerLens)",
+      "add_special_tokens": false,
+      "bos": "id 50256 prepended manually",
+      "window_tokens_including_bos": 128,
+      "padding": "none",
+      "attention_mask": "all ones"
+    },
+    "positions": "absolute learned positions 0..127 starting at BOS; BOS position excluded from all SAE statistics",
+    "transformerlens": {
+      "version": "2.18.0 (pinned; last 2.x HookedTransformer release)",
+      "model_name": "gpt2",
+      "hf_model": "the pinned HF model object",
+      "fold_ln": true,
+      "center_writing_weights": true,
+      "center_unembed": true,
+      "fold_value_biases": true,
+      "refactor_factored_attn_matrices": false,
+      "default_prepend_bos": true,
+      "note": "All processing options are passed explicitly; library defaults are not relied on. center_writing_weights=true is required by the SAELens release entry; the others are the HookedTransformer.from_pretrained defaults of the 2.x API, which we assume were in effect at training time (training-time TL version not recorded; checked indirectly by K4)."
+    },
+    "saelens": {
+      "version": "6.51.3",
+      "required_cfg": {
+        "apply_b_dec_to_input": true,
+        "normalize_activations": "none",
+        "architecture": "standard",
+        "activation": "relu",
+        "hook_name": "blocks.8.hook_resid_pre",
+        "d_in": 768,
+        "d_sae": 24576
+      }
+    },
+    "hf_shortcut_mapping": "x = h - mean_d(h) (per token), where h = HF hidden_states[8]",
+    "admissible_subspace": "All readers of the layer-8 residual are LayerNorms, so logits are invariant to adding c*1. Admissible perturbations: range(P), P = I - 11^T/d. Edits used for interventions are P-projected; the LN correction solves (M P) delta = t, i.e. uses J_E P.",
+    "data": {
+      "calibration_split": "WikiText-103 raw validation (pinned revision)",
+      "n_windows_parity": 16,
+      "n_windows_reconstruction": 64,
+      "window_seed": "p3-contract-exec"
+    },
+    "precision_note": "float64 for model, TransformerLens and SAE (SAE weights are stored in float32 and cast exactly)"
+  },
+  "checks": {
+    "K0_weights_identity": "SAELens-loaded W_enc, W_dec, b_enc, b_dec are bitwise equal to the tensors in the pinned safetensors file; SAELens cfg equals fixed.saelens.required_cfg",
+    "K1_tokenizer": "TransformerLens to_tokens(text, prepend_bos=True) equals [50256] + HF tokenizer(text, add_special_tokens=False) on every parity window's text",
+    "K2_activation": "per non-BOS token, ||x_TL - x_HF|| / ||x_TL|| <= 1e-4 (max over tokens), with x_HF = h - mean(h); the uncentred HF state is recorded as a negative control (expected to fail)",
+    "K3_features": "SAELens encode(x_TL) vs manual ReLU((x_HF - b_dec) W_enc + b_enc): per-token relative l2 difference <= 1e-3 (max); active-set disagreements only where |pre| <= 1e-3",
+    "K4_reconstruction": "canonical path on 64 calibration windows (non-BOS): L0 in [30, 120] and FVE >= 0.7 (reference L0 60, variance explained 0.9 from the SAELens release entry); uncentred HF input recorded as diagnostic",
+    "K5_noop": "identity hook and zero-delta hook reproduce unhooked logits exactly (max |diff| == 0) in both backends",
+    "K6_logit_parity": "TL vs HF logits on the same ids: remove the per-position common shift c_t (center_unembed); residual max |diff| <= 1e-3; next-token probability max |diff| <= 1e-5; KL(P_TL || P_HF) <= 1e-6 (max over positions); the common shift magnitude is reported separately",
+    "K7_intervention_parity": "for admissible edits delta in range(P) (decoder, encoder-row and LN directions of 4 calibration features, norm 0.1 x median residual norm, one position per window): SAE feature change after the edit agrees across backends (relative l2 <= 1e-3) and next-token distributions after the edit agree (KL <= 1e-6, prob max |diff| <= 1e-5 at positions >= edit position)",
+    "K8_non_admissible_readout": "for the raw (unprojected) decoder direction, record the SAE readout difference between the TL convention (x + delta) and the HF-shortcut convention (centre(h + delta)); descriptive: shows the two conventions agree only on range(P)",
+    "K9_mean_only_control": "delta = rho * 1/sqrt(d): next-token KL vs clean <= 1e-8 in both backends (model invariant), while SAE feature drift in the TL convention is reported (expected nonzero). Descriptive diagnostic control: internal change without external effect.",
+    "K10_no_processing_path": "HookedTransformer.from_pretrained_no_processing('gpt2', hf_model=pinned, tokenizer=pinned, center_writing_weights=True): hook activations vs processed TL path: per-token relative l2 <= 1e-4 (max); next-token probabilities vs processed TL: max |dp| <= 1e-5 and KL <= 1e-6; logits vs HF: max |diff| reported (no common shift expected because center_unembed is off)"
+  },
+  "pass_rule": "CONTRACT_PASS_FLOAT64 iff K0-K7, K9's KL bound and K10 pass in float64. K8 descriptive. v1 (float32) verdict unchanged.",
+  "changelog": [
+    "v1 (float32) executed 2026-09-26: CONTRACT_FAIL_BLOCKED. K0-K5 pass; K6 and K7 fail only the probability tolerance (max |dp| 2.8e-5 > 1e-5) while logit residual (4.3e-4 <= 1e-3) and KL (7.5e-7, 7.7e-7 <= 1e-6) pass; K9 fails its KL bound (5.1e-7 / 6.0e-7 > 1e-8). v1 result is preserved in results/contract_exec/.",
+    "v2 (this file, written after seeing v1): DIAGNOSTIC re-execution in float64 with IDENTICAL tolerances, to separate a mapping error from float32 rounding (the center_unembed common logit shift is ~279, so float32 logits carry absolute rounding ~3e-5). Tolerances are not relaxed. K10 added: SAELens's recommended loading path (HookedTransformer.from_pretrained_no_processing with the release's model_from_pretrained_kwargs, i.e. center_writing_weights=True only) vs the processed path used in v1.",
+    "Interpretation rule fixed now: if v2 passes, the contract is CONTRACT_PASS_FLOAT64 and the REAL-01R pilot runs in float64; the float32 failure stands and float32 differences of ~1e-6 in KL are recorded as the numerical noise floor for any float32 quality metric."
+  ]
+}
