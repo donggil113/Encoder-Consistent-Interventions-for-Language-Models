@@ -97,6 +97,8 @@ def aggregate(rows: Iterable[dict], group_keys: List[str], metrics: List[str], u
             continue
         for mname in metrics:
             v = r.get(mname)
+            if isinstance(v, bool):  # flags such as repair_converged count as 0/1 rates
+                v = float(v)
             if _finite(v):
                 per_unit[g][r[unit]][mname].append(float(v))
     out = []
@@ -113,6 +115,78 @@ def aggregate(rows: Iterable[dict], group_keys: List[str], metrics: List[str], u
             else:
                 rec[mname] = None
         out.append(rec)
+    return out
+
+
+def _total_err(r: dict) -> float:
+    return math.hypot(r["target_rel_err"], r["leak_rel_all"])
+
+
+def paired(rows: Iterable[dict], group_keys: List[str], a: str, b: str, metric: Callable[[dict], float],
+           unit: str = "seed") -> List[dict]:
+    """Per-instance paired comparison of methods ``a`` and ``b`` (lower is better)."""
+    per: Dict[tuple, Dict[object, Dict[str, List[float]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    for r in rows:
+        if r.get("status") != "OK" or r.get("method") not in (a, b):
+            continue
+        per[tuple(r.get(k) for k in group_keys)][r[unit]][r["method"]].append(metric(r))
+    out = []
+    for g in sorted(per, key=lambda t: tuple(str(x) for x in t)):
+        diffs = [statistics.fmean(d[a]) - statistics.fmean(d[b]) for d in per[g].values() if a in d and b in d]
+        if not diffs:
+            continue
+        out.append({**dict(zip(group_keys, g)), "a": a, "b": b, "n_units": len(diffs),
+                    "a_better_units": sum(1 for x in diffs if x < 0), "median_diff_a_minus_b": statistics.median(diffs),
+                    "min_diff": min(diffs), "max_diff": max(diffs)})
+    return out
+
+
+def rescale_vs_interference(rows: List[dict], tol: float) -> List[dict]:
+    """Step-5 classification of linear regimes. A class is assigned only if it
+    holds in every instance (max over instances of per-instance means)."""
+    out = []
+    for reg in sorted(set(r["regime"] for r in rows)):
+        def worst(method, key):
+            per = defaultdict(list)
+            for r in rows:
+                if r["regime"] == reg and r["method"] == method and r["status"] == "OK" and _finite(r.get(key)):
+                    per[r["seed"]].append(r[key])
+            return max(statistics.fmean(v) for v in per.values())
+
+        def med(method, key):
+            per = defaultdict(list)
+            for r in rows:
+                if r["regime"] == reg and r["method"] == method and r["status"] == "OK" and _finite(r.get(key)):
+                    per[r["seed"]].append(r[key])
+            return statistics.median(statistics.fmean(v) for v in per.values())
+
+        dec_tot = worst("decoder", "target_rel_err") + worst("decoder", "leak_rel_all")
+        res_leak = worst("decoder_rescaled", "leak_rel_all")
+        ln_res = worst("jacobian_ln", "residual_rel")
+        ln_leak = worst("jacobian_ln", "leak_rel_all")
+        ln_leak_p = worst("jacobian_ln", "leak_rel_protected")
+        if dec_tot <= tol:
+            cls = "NO_MISMATCH"
+        elif res_leak <= tol:
+            cls = "RESCALE_SUFFICIENT"
+        elif ln_res > 1e-6:
+            cls = "INFEASIBLE_ON_S_UNION_P"
+        elif ln_leak <= tol:
+            cls = "INTERFERENCE_REMOVED_BY_CORRECTION"
+        elif ln_leak_p <= tol:
+            cls = "INTERFERENCE_MOVED_TO_UNPROTECTED"
+        else:
+            cls = "UNCLASSIFIED"
+        dt, dl = med("decoder", "target_rel_err"), med("decoder", "leak_rel_all")
+        out.append({"regime": reg, "class": cls,
+                    "decoder_target_rel_err_median": dt, "decoder_leak_median": dl,
+                    "decoder_diag_share_median": (dt * dt / (dt * dt + dl * dl)) if (dt * dt + dl * dl) > tol * tol else None,
+                    "rescaled_leak_median": med("decoder_rescaled", "leak_rel_all"),
+                    "rescaled_norm_ratio_median": med("decoder_rescaled", "norm_ratio"),
+                    "ln_leak_median": med("jacobian_ln", "leak_rel_all"),
+                    "ln_leak_protected_median": med("jacobian_ln", "leak_rel_protected"),
+                    "ln_residual_rel_median": med("jacobian_ln", "residual_rel"),
+                    "ln_norm_ratio_median": med("jacobian_ln", "norm_ratio")})
     return out
 
 
@@ -251,9 +325,10 @@ def verify(results: Dict[str, List[dict]], cfg: dict) -> Dict[str, dict]:
             for s in per_dec:
                 n += 1
                 wins += int(statistics.fmean(per_jl[s]) < statistics.fmean(per_dec[s]))
+            diffs = [statistics.fmean(per_jl[s]) - statistics.fmean(per_dec[s]) for s in per_dec]
             out[case] = {"medians": med, "instances_where_ln_beats_decoder_externally": f"{wins}/{n}",
-                         "internal_improvement": med["jacobian_ln"]["internal_err_median"] < med["decoder"]["internal_err_median"],
-                         "external_improvement": med["jacobian_ln"]["external_err_median"] < med["decoder"]["external_err_median"]}
+                         "external_paired_diff_ln_minus_decoder_median": statistics.median(diffs),
+                         "external_paired_diff_range": [min(diffs), max(diffs)]}
         V["V8"] = {"verdict": "DESCRIPTIVE", **out}
     else:
         V["V8"] = {"verdict": "NOT_RUN"}
@@ -359,6 +434,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         summary["P3-TX-EXTPROXY"] = aggregate(results["P3-TX-EXTPROXY"], ["case", "method"],
                                               ["int_target_rel_err", "int_leak_rel", "ext_target_rel_err",
                                                "ext_leak_rel", "norm_ratio"])
+    if "P3-T2-MISMATCH" in results:
+        summary["P3-T5-RESCALE-VS-INTERF"] = rescale_vs_interference(results["P3-T2-MISMATCH"],
+                                                                     cfg["numerics"]["identity_tol"])
+    comparisons = []
+    for eid in ("P3-T4-ACTIVESET-NORM", "P3-T4b-SPARSITY-EXPLORATORY"):
+        if eid in results:
+            for a, b, name, fn in (("jacobian_ln", "decoder_rescaled", "leak_rel_all", lambda r: r["leak_rel_all"]),
+                                   ("trust_region_normmatched", "decoder", "total_err", _total_err),
+                                   ("jacobian_ln_repair", "decoder_rescaled", "total_err", _total_err)):
+                for rec in paired(results[eid], ["act", "target_kind", "alpha"], a, b, fn):
+                    comparisons.append({"experiment_id": eid, "metric": name, **rec})
+    summary["paired_comparisons_T4"] = comparisons
     summary["verification"] = verify(results, cfg)
     manifest["verification"] = {k: v["verdict"] for k, v in summary["verification"].items()}
     spath = os.path.join(args.out, "summary_dev.json" if args.dev else "summary.json")
