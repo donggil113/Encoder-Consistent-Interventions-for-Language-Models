@@ -1,0 +1,42 @@
+{
+ "experiment_id": "P3-REAL-02-LX",
+ "verdict": "BLOCKED",
+ "reason": "calibration support: fewer WikiText-103 validation windows (BOS + 127 tokens) contain a wedding-lexicon word than the pre-set minimum of 20 needed to choose the SAE feature and the DiffMean direction on calibration data",
+ "attempts": [
+  {
+   "config": "configs/p3_real02_lx.json",
+   "config_id": "p3_real02_lx_v1",
+   "windows_per_doc_cap": 8,
+   "hit_windows": 5,
+   "stage_seconds": 158.4,
+   "status": "BLOCKED"
+  },
+  {
+   "config": "configs/p3_real02_lx_v1_1.json",
+   "config_id": "p3_real02_lx_v1_1",
+   "windows_per_doc_cap": null,
+   "hit_windows": 13,
+   "nohit_windows": 1930,
+   "stage_seconds": 629.6,
+   "status": "BLOCKED",
+   "note": "single-shot amendment committed (876e77c) before this run; its rule ends the experiment on a second BLOCKED"
+  }
+ ],
+ "not_run": [
+  "feature choice",
+  "DiffMean",
+  "KL-matched budget selection",
+  "cost probe",
+  "test prompts",
+  "generation",
+  "lexical metrics",
+  "summary"
+ ],
+ "test_documents_read": false,
+ "what_would_unblock_it (each needs a new frozen protocol; none is applied here)": [
+  "a calibration corpus with >= 20 hit windows (new data: needs a download approval)",
+  "a different lexicon/topic with enough WikiText calibration support (new pre-registration; the lexicon choice must not look at test data)",
+  "lowering min_hit_windows below 20 (not done: threshold change after seeing the count)"
+ ],
+ "stage_status": "results/real02_lx/stage_status.json"
+}

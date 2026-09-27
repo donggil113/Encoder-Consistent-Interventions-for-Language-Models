@@ -6,5 +6,31 @@
     "peak_rss_kb": 2024928,
     "unix_time": 1790487086.6130228,
     "reason": "only 5 calibration windows with lexicon hits"
+  },
+  {
+    "stage": "calibrate",
+    "status": "BLOCKED",
+    "seconds": 629.604,
+    "peak_rss_kb": 2077768,
+    "unix_time": 1790487788.8722074,
+    "reason": "only 13 calibration windows with lexicon hits",
+    "config_id": "p3_real02_lx_v1_1",
+    "n_nohit_windows": 1930
+  },
+  {
+    "stage": "run",
+    "status": "BLOCKED",
+    "seconds": 2.034,
+    "peak_rss_kb": 320680,
+    "unix_time": 1790487812.8362436,
+    "reason": "calibration not frozen"
+  },
+  {
+    "stage": "summarize",
+    "status": "NOT_RUN",
+    "seconds": 0.0,
+    "peak_rss_kb": 18116,
+    "unix_time": 1790487813.2825844,
+    "reason": "no raw_run.csv"
   }
 ]

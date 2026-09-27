@@ -400,7 +400,7 @@ session (git history, commit 7c46116).
   tokenizer and model object are passed into TransformerLens, so library defaults cannot
   replace the old contract.
 
-### 7.2 Proposition (admissible subspace), **PROVED** (elementary)
+### 7.2 Proposition (admissible subspace), **PROVED for GPT-2 only** (elementary; restated in §9.1)
 
 In GPT-2, every read of the residual stream at or after layer 8 goes through a LayerNorm
 that subtracts the mean over d_model: ln_1, ln_2 of later blocks, and ln_f. So adding
@@ -459,8 +459,11 @@ Reading:
   invariant, yet moves the SAE by a drift/ρ of 125 (median), with a single feature
   changing by up to 37.5.
   - The encoder is unconstrained along a direction the training data never occupies.
-  - This is a real-model instance of internal change with no external effect. It is used
-    as a diagnostic control in the pilot and is never counted as a method.
+  - ~~This is a real-model instance of internal change with no external effect.~~
+    **Corrected in the fourth session (§9):** the 125 is the *raw off-slice* readout
+    `E(x0 + δ) − E(x0)`. The canonical readout `E(P(h + δ)) − E(Ph)` of the same edit is
+    ≤ 3.8e-15. The number is an off-training-subspace stress test of the encoder, not a change
+    of the model's features.
 
 ## 8. REAL-01R pilot (third session, executed; internal metrics only)
 
@@ -480,7 +483,7 @@ Reading:
   | active | decoder (= weight-only rescaled) | 0.583 | 0.311 | 0.656 | 5.32 | 21.6 |
   | active | encoder row | 0.681 | 0.366 | 0.778 | 1.03 | 11.8 |
   | active | LN (`J_E P`) | ≈0 | 0.114 | 0.114 | 0.96 | 12.7 |
-  | active | mean-only control | 6.53 | 52.1 | 52.5 | ≈0 | 9.04 |
+  | active | mean-only control (raw off-slice readout; canonically 0 — see §9) | 6.53 | 52.1 | 52.5 | ≈0 | 9.04 |
   | inactive | decoder | 0.583 | 0.361 | 0.716 | 3.41 | 36.9 |
   | inactive | rescaled (weight-only; target err 0.727) | 0.342 | 0.112 | 0.37 | 0.65 | 22.5 |
   | inactive | LN (`J_E P`) | ≈0 | 0.295 | 0.295 | 1.16 | 22.5 |
@@ -495,7 +498,8 @@ Reading:
     - the ΔD_new intervals include 0 at q50 and q90.
 - **Equal norm (ρ = 10.2), active targets, target gain.**
   - decoder 0.895; encoder row 1.50; LN 1.35;
-  - **mean-only 1.85, with KL ≈ 1e-17.**
+  - mean-only 1.85, with KL ≈ 1e-17 — **raw off-slice readout; canonically 0 (§9). The
+    v2 reading "internal efficiency is maximized by a model-invisible direction" is withdrawn.**
 - **Reading.**
   - Internally, in this sparse regime, the correction lowers drift without raising newly
     activated drift. That is the opposite of the dense toy and consistent with the
@@ -504,3 +508,145 @@ Reading:
     edit along directions the model is less sensitive to.
   - Nothing here is external evidence, and R3 remains NOT_RUN.
   - G1–G3 are descriptive, all "continue side", and are not gate decisions.
+
+
+## 9. Readout closure: `P3-READOUT-CLOSURE` (fourth session, executed)
+
+### 9.1 Definitions and the GPT-2 statement
+- SAE input coordinates: `x = P h` (HF hidden state `h`, `P = I − 11ᵀ/d`).
+- **Raw off-slice readout:** `E(x + δ) − E(x)`. The SAE reads `x + δ`, which leaves
+  `range(P)` whenever `1ᵀδ ≠ 0`.
+- **Canonical reprojected readout:** `E(P(h + δ)) − E(P h) = E(x + Pδ) − E(x)`. It depends
+  only on the class `δ + span(1)`.
+- **Proposition (GPT-2 only, exact arithmetic).** Every reader of the residual stream is a
+  mean-subtracting LayerNorm (ln_1, ln_2, ln_f); adding `c_t·1` at the input of block ℓ at
+  any positions leaves every logit unchanged. The proof (manuscript App. B) inducts over
+  blocks and positions. For other architectures (e.g. RMSNorm) the statement is
+  **UNPROVED** and generally false.
+- `range(P)` is the chosen representative of the quotient `R^d / span(1)`, **not the unique
+  valid space**: any complement of `span(1)` represents the same model-visible edits.
+- Effective Jacobian of the canonical readout: `J_eff = J_E(Ph) P`, with `J_eff 1 = 0`.
+  The LN correction solves `(M P) δ = t`; its least-norm solution lies in `range(P Mᵀ)`.
+
+### 9.2 Call paths checked (source read in this session)
+- `src/saeedit/real/contract_exec.py`, K9: `sae.encode(xe_tl[None]) − sae.encode(x0[None])`,
+  where `xe_tl = x0 + ρ·1/√d` is captured after the TransformerLens hook edit. This is raw.
+- `src/saeedit/real/real01r.py::_run_group`: `be.sae_pre(x[None, :] + deltas)`. This is raw,
+  and equals canonical for every projected (admissible) method.
+- `real01r.py::_edit_rows` / `Backend.match_scale`: the target-matched mean-only scale uses
+  `E_j·1/√d`, i.e. the raw readout. Canonically, no scale reaches the target.
+
+### 9.3 Results (`results/readout_closure/`; `src/saeedit/real/readout_closure.py`)
+
+Part A covers the 8 K9 windows and positions of contract exec v2, recomputed on the HF path
+in float64:
+
+| quantity | value |
+|---|---|
+| ρ recomputed vs stored | 10.11984940824687 vs 10.119849408246868 (diff 1.8e-15) |
+| ‖Pδ‖ for δ = ρ·1/√d | 3.1e-15 |
+| raw drift/ρ median (stored 124.67760181922745) | 124.6776018192275 (rel. diff 4.6e-16) |
+| raw drift/ρ max (stored 158.875) | 158.875 |
+| **canonical drift/ρ max** | **3.8e-15** |
+| KL(clean ‖ h+δ) max | 1.1e-15 |
+| max \|log p(h+δ) − log p(h+Pδ)\| | 2.0e-13 |
+
+Part B covers 16 pilot test points (the first document per feature × target kind in file
+order): 760 edits, all methods and doses, plus an unprojected-decoder diagnostic.
+
+| quantity | value |
+|---|---|
+| stored `raw_run.csv` columns reproduced (max rel. diff) | 0.0 |
+| admissible methods: max \|raw − canonical\| over metrics | 3.6e-12 |
+| mean-only raw D_all/ρ median | 99.2 |
+| mean-only canonical D_all/ρ max | 1.4e-13; canonical target change ≤ 2.2e-14 |
+| mean-only KL(clean ‖ edit) max | 1.4e-15 |
+| unprojected decoder: max \|raw − canonical\| D_all/ρ | 0.34 |
+| max \|log p(h+δ) − log p(h+Pδ)\| over all edits | 2.8e-13 |
+
+Per-window and per-group sha256 values of `h`, `x = Ph`, `δ`, `Pδ`, the raw and canonical
+activations, and the clean log-probabilities are in the report JSON. They are sha256 over
+float64 bytes, so the last bit may differ with thread count.
+
+Cost: 843 s wall, 1481 CPU-s (process total over 2 threads), 5.6 GB peak RSS. Most of it
+(734 s) was the batched logit check in part B.
+
+**Reading.** Every stored mean-only number (K9's 125×, the pilot's mean-only rows, and the
+equal-norm target gain 1.85) is a raw off-slice readout. Canonically, the mean-only edit
+changes no feature and no logit. Admissible-edit results are unaffected.
+
+## 10. Matched-denominator re-aggregation (fourth session; stored raw only)
+
+The code is `src/saeedit/real/reagg_matched.py`, which writes new files in
+`results/real01r_reagg/`; `results/real01r/` is never rewritten. The rules were fixed in the
+script before its tables were produced:
+- matched means status OK and target_err_rel ≤ 1e-6;
+- OK_UNMATCHED rows are separate;
+- mean-only target-matched rows are RAW_OFF_SLICE_ONLY and excluded;
+- the primary intersection is {decoder, encoder_grad, jacobian_ln}; the secondary
+  intersection adds random.
+
+Findings:
+- **Stored status totals:** OK 4848 / OK_UNMATCHED 1024 / INFEASIBLE 272 (all random,
+  "no s ≥ 0 reaches the target").
+- **Target error of OK target-matched rows:** at most 5.1e-8. This is float32 rounding of the
+  stored α and scale (`torch.tensor` of Python floats in `_run_group`), not an edit miss.
+- **Primary intersection:** 64/64 test points at every dose and target kind (42 active / 40
+  inactive documents). The LN, decoder and encoder comparisons were already on the full
+  common denominator.
+- **Secondary intersection (with random):** 51.6–54.7% of points excluded.
+- **Rescaled decoder:** within tolerance for 256/256 active-target rows and 0/256
+  inactive-target rows. Its median error is 1.0 at q50/q90, 0.727 at q99 and 0.394 at 2q99.
+  The plain decoder is never within tolerance.
+- **G1:** as run, 0.426 [0.375, 0.469] (54 documents) pools the two target kinds. Split:
+  active (matched) 0.583 [0.452, 0.600] with n = 42; inactive (unmatched) 0.342 [0.289,
+  0.371] with n = 40. Both are above 0.1, so the side of the readout does not change.
+- **In-run amendments.** The min-unit rule (≥ 10 documents) and target_gain came in commit
+  6a37028 at 2026-09-27 00:17:39 UTC. The pilot run stage started at about 00:16:32 and wrote
+  `raw_run.csv` at 00:33:54. The frozen pilot config (6b4b273) was committed at 00:06:19.
+- **Effective calibration counts behind q99:** pilot features have n_positive between 26
+  and 134. Features 8852 (63), 9608 (26) and 22630 (39) have q99 between their two largest
+  calibration activations. Of all 64 calibration features, 35 have fewer than 100 positives
+  (minimum 8). q99 is kept as frozen; there is no post-hoc switch to q90.
+- Cost: 5.2 s wall, single-threaded standard library.
+
+## 11. P3-REAL-02-LX lexical pilot (fourth session): **BLOCKED at calibration**
+
+- **Frozen before any data read.** `configs/p3_real02_lx.json` (commit 656b6f0):
+  - metric "wedding-lexicon occurrence": ≥ 1 hit, and hits per generated token;
+  - ≤ 32 test articles with one prompt each, greedy 32 tokens, edit at every position;
+  - KL(P_base ‖ P_edit) teacher-forced on the common prompt, cap κ = 0.1 nats, chosen from
+    calibration only;
+  - methods: projected decoder, projected encoder row, LN (`J_E P`), projected DiffMean, no
+    edit. mean_only is a fixed-amplitude control outside ranking; random is NOT_RUN.
+  - The lexicon is also used for feature and DiffMean selection (disclosed).
+  - Cost rule: largest n_docs in {32, 24, 16, 8} whose projected run time is ≤ 30 min.
+- **v1:** calibrate BLOCKED, 5 hit windows < 20 (8 windows per article cap).
+- **v1.1** (`configs/p3_real02_lx_v1_1.json`, commit 876e77c, single-shot, committed before
+  rerun): no cap, everything else unchanged. Calibrate BLOCKED, 13 hit windows of 1943.
+- The run stage recorded BLOCKED ("calibration not frozen") and summarize recorded NOT_RUN.
+  No test document was read, and nothing was generated.
+- **Exact blocker.** WikiText-103 validation at the pinned revision (the only approved
+  calibration text) has 13 windows containing a wedding-lexicon word, and the frozen minimum
+  for feature/DiffMean selection is 20.
+- **Not done.** Lowering min_hit_windows (a threshold change after seeing the count); using
+  test articles for calibration; a new lexicon chosen by inspection.
+- **Unblocking needs a new frozen protocol.** Either calibration text with more topic
+  support (new data, needs approval), or a topic that WikiText supports, with the topic
+  chosen without test data.
+- Adapter checks on a synthetic prompt: greedy = HF generate; LN cache = recomputation;
+  actor mean component < 1e-12; mean-only continuation unchanged (`tests/test_real02_adapter.py`).
+
+## 12. Next research decision (one; needs the user)
+
+Reopening the behavioural question needs one choice between two options. Each is a new
+frozen protocol, not a rerun.
+
+- **(A) Recommended.** Keep WikiText and the approved assets. Pre-register a topic lexicon
+  taken verbatim from a published steering paper, not chosen by inspecting WikiText. Admit
+  it only if its calibration windows reach the same minimum of 20, checked on calibration
+  data only. Everything else stays as in `configs/p3_real02_lx_v1_1.json`.
+- **(B)** Keep the wedding lexicon and approve new calibration text, i.e. a new data
+  download.
+
+Until then the paper makes no behavioural claim.

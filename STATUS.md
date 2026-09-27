@@ -1,8 +1,112 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-09-27 (fourth session). Branch: `claude/magical-bell-8vyrpd`.
 
-## Third session summary (read first)
+## Fourth session summary (read first)
+
+Scope, as instructed: one readout-closure check, one re-aggregation, one limited lexical pilot
+(P3-REAL-02-LX), and manuscript v3. No new project, gate, toy or feature sweep. No new
+installation or download: everything reused the scratch venv and the HF cache (672 MB)
+from the third session, run offline (`HF_HUB_OFFLINE=1`).
+
+**Approval provenance.** The third session's `approval_interpretation` in
+`run_manifest.json` was Claude's reading of an instruction to execute. It was not a user
+sentence approving installs or downloads. This session installed and downloaded nothing.
+The user's server path `/nvmedata/dgkang/papers/<project_id>/` was not used: this checkout
+is a separate cloud sandbox, and nothing was moved.
+
+- **P3-READOUT-CLOSURE (new, executed).** The K9 "drift 125×" and every pilot mean-only row
+  are *raw off-slice* readouts, `E(x + δ) − E(x)`. We recomputed the stored numbers exactly
+  (rel. 4.6e-16; `raw_run.csv` columns exact). The *canonical reprojected* readout
+  `E(P(h + δ)) − E(Ph)` of the mean-only edit is ≤ 3.8e-15, and its KL is ≤ 1.1e-15. For
+  admissible edits the two readouts agree to 3.6e-12, so no admissible result changes.
+  - **Corrected interpretation:** the third session's "real-model instance of internal
+    change without external effect" and "internal efficiency maximized by a model-invisible
+    direction" (mean-only gain 1.85) are withdrawn. The numbers are an off-training-subspace
+    stress test of the encoder.
+  - `results/readout_closure/`; 843 s wall.
+- **Math.** Mean invariance is proved for GPT-2 only (mean-subtracting LN readers, exact
+  arithmetic) and is UNPROVED elsewhere. `range(P)` is a chosen representative, not the
+  unique valid space. `J_eff = J_E(Ph) P`.
+- **Matched-denominator re-aggregation (new derived files only;
+  `results/real01r_reagg/`).**
+  - Decoder, encoder row and LN are matched at 100% of test points at every dose, so the
+    main pilot comparison already used the full common denominator.
+  - Random directions are infeasible at 52–55% of points.
+  - The rescaled decoder is matched for 256/256 active-target rows and 0/256
+    inactive-target rows.
+  - The 512 mean-only target-matched rows exist only under the raw readout and are excluded.
+  - G1 as run (0.426) pooled matched and unmatched rows. Split, it is 0.583 active and
+    0.342 inactive, both on the same side.
+  - The G1–G3 min-unit rule and target_gain are labelled **in-run amendments**.
+  - q99 rests on 26–134 positive calibration activations. For 3 of 8 pilot features it lies
+    between the two largest values.
+- **P3-REAL-02-LX: BLOCKED at calibration** (`results/real02_lx/`).
+  - The config (`configs/p3_real02_lx.json`, commit 656b6f0) was frozen before any data read:
+    ≤ 32 test docs, one prompt each, greedy 32 tokens, edit at every position, KL cap κ = 0.1
+    on the common prompt; projected decoder, projected encoder row, LN (`J_E P`), projected
+    DiffMean, and no edit. mean_only is a fixed-amplitude control outside every ranking;
+    random is NOT_RUN.
+  - v1 calibrate: **BLOCKED**, 5 calibration windows with a lexicon word against the
+    pre-set minimum of 20 (cap of 8 windows per article); 158 s.
+  - A single-shot amendment v1.1 (`configs/p3_real02_lx_v1_1.json`, commit 876e77c) was
+    committed before rerunning: no window cap, everything else unchanged, and a second
+    BLOCKED ends the experiment.
+  - v1.1 calibrate: **BLOCKED**, 13 of 1943 windows; 630 s.
+  - The run stage recorded BLOCKED and summarize recorded NOT_RUN. **No test document was
+    read, and no text was generated.** min_hit_windows was not lowered.
+  - Adapter checks on a synthetic prompt pass (`tests/test_real02_adapter.py`, 9 s). Passing
+    tests do not support any hypothesis.
+  - Exact blocker: the only approved calibration text (WikiText-103 validation at the
+    pinned revision) lacks wedding-lexicon support. Unblocking needs a new frozen protocol:
+    more topic text (a new data download, which needs approval) or a topic that WikiText
+    supports.
+- **Manuscript v3** (`paper/main.tex`, edited in place).
+  - Order: (a) raw/canonical coordinates, (b) admissible realization with the toy
+    redistribution results kept in the body, (c) matched denominators, (d) lexical change
+    and quality.
+  - The title was narrowed.
+  - **COMPILE_NOT_RUN**: no TeX installed. Sources and exact build commands are in
+    `paper/README.md` and `export_bundle/`.
+
+**Next research decision (one, needs the user).** To reopen the behavioural test, either:
+- (A, recommended) pre-register a published steering-topic lexicon that the approved
+  WikiText calibration text supports (≥ 20 windows, checked on calibration only); or
+- (B) approve new calibration text for the wedding lexicon.
+
+See RESEARCH_PACKET §12.
+
+### Fourth session: time and cost ledger
+
+Terms used below:
+- **wall** is elapsed time.
+- **CPU-s** is process CPU time summed over all threads, so it can exceed wall.
+- **threads** is the torch intra-op thread setting.
+
+| step | wall | CPU-s | threads | outcome |
+|---|---|---|---|---|
+| installs / downloads | 0 | – | – | none (reused venv + HF cache, offline) |
+| readout closure (`readout_closure.py`) | 843 s (load 86, part A 22, part B 734) | 1481 | 2 | RAN |
+| matched-denominator re-aggregation, first attempt | < 5 s | – | 1 | FAILED (CSV fieldnames), fixed |
+| matched-denominator re-aggregation | 5.2 s | 5.0 | 1 | RAN |
+| unit tests, stdlib (41) and torch (1) | 0.5 s + 1.1 s | – | 1–2 | PASS (4 skipped = model tests) |
+| REAL-02 adapter model tests (3) | 9.0 s | not recorded | 2 | PASS |
+| REAL-02-LX v1 calibrate | 158.4 s | not recorded | 2 | BLOCKED (5 < 20) |
+| REAL-02-LX v1.1 calibrate | 629.6 s | not recorded | 2 | BLOCKED (13 < 20) |
+| REAL-02-LX run / summarize | 2.0 s / 0 s | – | – | BLOCKED / NOT_RUN |
+| paper_assets and tex_check (several runs) | 1–2 s each | – | 1 | RAN |
+| LaTeX build | – | – | – | COMPILE_NOT_RUN (no compiler) |
+
+Total heavy compute this session was about 1650 s wall on 2 threads.
+
+### Fourth session: NOT_RUN and blockers
+- P3-REAL-02-LX lexical metrics, KL/NLL tradeoff: **BLOCKED** at calibration (above).
+- P3-REAL-02-SEM (semantic evaluation): NOT_RUN.
+- P3-REAL-01R-FULL (all 64 features): NOT_RUN, not requested this session.
+- PDF build and page count: COMPILE_NOT_RUN. No TeX distribution is installed, and
+  installing one was not approved.
+
+## Third session summary (previous)
 
 - **Order.** P3-CONTRACT-EXEC was run before any REAL-02 work, as instructed. Model/SAE
   revisions, layer 8 and hook site are unchanged.
@@ -32,8 +136,9 @@ Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
   - The LN correction now uses `J_E P`.
   - Raw decoder edits include a mean component. For them, the TransformerLens and
     HF-shortcut conventions give SAE readouts that differ by 51–114% of the edit's effect.
-- **Mean-only diagnostic control.** A real-model instance of internal change with no
-  external effect: model KL ≤ 1.3e-15, while the SAE moves by a drift/ρ of 125 (median).
+- **Mean-only diagnostic control.** ~~A real-model instance of internal change with no
+  external effect~~ *(corrected in the fourth session: raw off-slice readout; canonically 0)*:
+  model KL ≤ 1.3e-15, while the raw SAE readout moves by a drift/ρ of 125 (median).
 - **REAL-01R pilot: RAN.** Config `configs/p3_real01r_pilot.json`, frozen before the test
   run.
   - Setup: float64; 8 features, a seeded subsample of 64 calibration features; 54 test
@@ -44,8 +149,8 @@ Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
     ΔD_new = −0.17, ΔKL = −0.0038 nats. The LN edit norm is 12.7, against 21.6 for the
     decoder.
   - Against the encoder row, LN has lower drift and nearly the same KL.
-  - At equal norm, the mean-only control has the highest target gain (1.85) with model KL of
-    about 0. Internal target efficiency is therefore not evidence of external effect.
+  - ~~At equal norm, the mean-only control has the highest target gain (1.85) with model KL
+    of about 0.~~ *(fourth session: raw off-slice readout; the canonical gain is 0.)*
   - G1–G3 read "continue side" but are descriptive only (pilot).
   - The real SAE (L0 ≈ 72 of d = 768) behaves like the toy's sparse regime, not the dense
     one. This is consistent with the toy, but not a test of it.
@@ -64,7 +169,7 @@ Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
   success is NOT_RUN (no independent semantic evaluation).
 
 
-## Second session summary (read first)
+## Second session summary (previous)
 
 | Layer | Status |
 |---|---|

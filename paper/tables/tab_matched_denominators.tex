@@ -1,0 +1,13 @@
+\begin{tabular}{lrrrrrr}
+\toprule
+Method (target-matched, 4 doses) & rows & matched & unmatched & infeasible & raw-only & docs \\
+\midrule
+decoder & 512 & 512 & 0 & 0 & 0 & 42 \\
+encoder row & 512 & 512 & 0 & 0 & 0 & 42 \\
+LN ($J_EP$) & 512 & 512 & 0 & 0 & 0 & 42 \\
+random & 512 & 240 & 0 & 272 & 0 & 42 \\
+rescaled (weight-only) & 512 & 0 & 512 & 0 & 0 & 42 \\
+plain decoder ($\alpha D_j$) & 512 & 0 & 512 & 0 & 0 & 42 \\
+mean-only (raw readout) & 512 & 0 & 0 & 0 & 512 & 42 \\
+\bottomrule
+\end{tabular}

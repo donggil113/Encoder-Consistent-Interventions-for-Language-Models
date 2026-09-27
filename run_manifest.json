@@ -1,365 +1,441 @@
 {
-  "run_kind": "report",
-  "config_id": "p3_first_run_v2",
-  "config_path": "configs/p3_first_run.json",
-  "config_sha256": "90c7db4c7b00caf95b69c1851e0cc868ecb38168e06c557c321ce9aeb522a028",
-  "git": {
-    "commit": "46dbb2575fd95226cb63fdfd25ef38bf9c34909c",
-    "code_dirty": false,
-    "dirty_files": []
+ "run_kind": "report",
+ "config_id": "p3_first_run_v2",
+ "config_path": "configs/p3_first_run.json",
+ "config_sha256": "90c7db4c7b00caf95b69c1851e0cc868ecb38168e06c557c321ce9aeb522a028",
+ "git": {
+  "commit": "46dbb2575fd95226cb63fdfd25ef38bf9c34909c",
+  "code_dirty": false,
+  "dirty_files": []
+ },
+ "started_unix": 1790433291.5806296,
+ "python": "3.11.15",
+ "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+ "dependencies": "python standard library only (numpy/torch not installed; installation not approved)",
+ "threads": {
+  "OMP_NUM_THREADS": "2",
+  "note": "pure Python, single-threaded"
+ },
+ "budget_seconds": 120,
+ "seeds": [
+  1000,
+  1001,
+  1002,
+  1003,
+  1004,
+  1005,
+  1006,
+  1007,
+  1008,
+  1009,
+  1010,
+  1011,
+  1012,
+  1013,
+  1014,
+  1015,
+  1016,
+  1017,
+  1018,
+  1019
+ ],
+ "data_models_saes": "none: fully synthetic toy; no dataset, language model or SAE weights used",
+ "H_MAIN": "NOT_RUN",
+ "experiments": {
+  "P3-T2-MISMATCH": {
+   "engineering_status": "RAN",
+   "wall_seconds": 9.076286792755127,
+   "n_rows": 8960,
+   "row_status_counts": {
+    "OK": 8960
+   },
+   "raw_file": "results/raw/linear_regimes.csv",
+   "raw_sha256": "5c39c040ea6f27d063daf05791ac9ee3f946862a6e764b325d7bf34823a6e310"
   },
-  "started_unix": 1790433291.5806296,
-  "python": "3.11.15",
-  "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
-  "dependencies": "python standard library only (numpy/torch not installed; installation not approved)",
-  "threads": {
-    "OMP_NUM_THREADS": "2",
-    "note": "pure Python, single-threaded"
+  "P3-T3-FEASIBILITY": {
+   "engineering_status": "RAN",
+   "wall_seconds": 1.217719316482544,
+   "n_rows": 260,
+   "row_status_counts": {
+    "OK": 260
+   },
+   "raw_file": "results/raw/feasibility.csv",
+   "raw_sha256": "f09a2a5288f4be713f0eb40854fb31e7ab88568348f3837b6021f78b9173f803"
   },
-  "budget_seconds": 120,
-  "seeds": [
-    1000,
-    1001,
-    1002,
-    1003,
-    1004,
-    1005,
-    1006,
-    1007,
-    1008,
-    1009,
-    1010,
-    1011,
-    1012,
-    1013,
-    1014,
-    1015,
-    1016,
-    1017,
-    1018,
-    1019
-  ],
-  "data_models_saes": "none: fully synthetic toy; no dataset, language model or SAE weights used",
-  "H_MAIN": "NOT_RUN",
-  "experiments": {
-    "P3-T2-MISMATCH": {
-      "engineering_status": "RAN",
-      "wall_seconds": 9.076286792755127,
-      "n_rows": 8960,
-      "row_status_counts": {
-        "OK": 8960
-      },
-      "raw_file": "results/raw/linear_regimes.csv",
-      "raw_sha256": "5c39c040ea6f27d063daf05791ac9ee3f946862a6e764b325d7bf34823a6e310"
-    },
-    "P3-T3-FEASIBILITY": {
-      "engineering_status": "RAN",
-      "wall_seconds": 1.217719316482544,
-      "n_rows": 260,
-      "row_status_counts": {
-        "OK": 260
-      },
-      "raw_file": "results/raw/feasibility.csv",
-      "raw_sha256": "f09a2a5288f4be713f0eb40854fb31e7ab88568348f3837b6021f78b9173f803"
-    },
-    "P3-T4-ACTIVESET-NORM": {
-      "engineering_status": "RAN",
-      "wall_seconds": 50.405139207839966,
-      "n_rows": 15840,
-      "row_status_counts": {
-        "OK": 15840
-      },
-      "raw_file": "results/raw/activeset_norm.csv",
-      "raw_sha256": "3cba4082de407743cf3ee72cd1acf2e8019d9222ff8f8877a4ee4c22051f73b1"
-    },
-    "P3-TX-EXTPROXY": {
-      "engineering_status": "RAN",
-      "wall_seconds": 0.562262773513794,
-      "n_rows": 1920,
-      "row_status_counts": {
-        "OK": 1920
-      },
-      "raw_file": "results/raw/external_proxy.csv",
-      "raw_sha256": "02d8527118ff32f1d66be087a3eb4efc482483985bdb4c40e8a49bcd617c2f3e"
-    },
-    "P3-T4b-SPARSITY-EXPLORATORY": {
-      "engineering_status": "RAN",
-      "wall_seconds": 14.366897583007812,
-      "n_rows": 9536,
-      "row_status_counts": {
-        "OK": 9504,
-        "SKIP": 32
-      },
-      "raw_file": "results/raw/sparsity_exploratory.csv",
-      "raw_sha256": "1d27af0cc6cb804302c676cfa3a94624845378a9b7ed010ece3fc08b19631aeb"
-    }
+  "P3-T4-ACTIVESET-NORM": {
+   "engineering_status": "RAN",
+   "wall_seconds": 50.405139207839966,
+   "n_rows": 15840,
+   "row_status_counts": {
+    "OK": 15840
+   },
+   "raw_file": "results/raw/activeset_norm.csv",
+   "raw_sha256": "3cba4082de407743cf3ee72cd1acf2e8019d9222ff8f8877a4ee4c22051f73b1"
   },
-  "elapsed_seconds": 76.00005221366882,
-  "verification": {
-    "V1": "PASS",
-    "V2": "PASS",
-    "V3": "PASS",
-    "V4": "PASS",
-    "V5": "PASS",
-    "T3_checks": "PASS",
-    "V6": "PASS",
-    "V7": "PASS",
-    "V8": "DESCRIPTIVE"
+  "P3-TX-EXTPROXY": {
+   "engineering_status": "RAN",
+   "wall_seconds": 0.562262773513794,
+   "n_rows": 1920,
+   "row_status_counts": {
+    "OK": 1920
+   },
+   "raw_file": "results/raw/external_proxy.csv",
+   "raw_sha256": "02d8527118ff32f1d66be087a3eb4efc482483985bdb4c40e8a49bcd617c2f3e"
   },
-  "summary_file": "results/summary.json",
-  "summary_sha256": "a68509a3aee27f3d1e846f1740efd676ca4e9f8a71d5c35dbd3c15e00ea2583d",
-  "finished_unix": 1790433367.5806794,
-  "reproducibility": {
-    "first_report_run": {
-      "git_commit": "6bc3cf5b80ec22a157ba140910da24121c2d2bb6",
-      "code_dirty": false,
-      "elapsed_seconds": 77.02,
-      "note": "summary.json of this run had a boolean-aggregation bug; superseded"
-    },
-    "this_run": {
-      "git_commit": "46dbb2575fd95226cb63fdfd25ef38bf9c34909c",
-      "reason": "rerun after summary-only fix (commit 46dbb25)"
-    },
-    "raw_sha256_identical_across_runs": true
-  },
-  "compute_ledger": {
-    "note": "All CPU, single process. First-session numbers are wall-clock values printed by the commands at the time; none were estimated.",
-    "first_session": [
-      {
-        "what": "dev run, seeds 0-2 (v1 config)",
-        "seconds": 8.36
-      },
-      {
-        "what": "dev run, seeds 0-2 (v2 config, with T4b)",
-        "seconds": 11.34
-      },
-      {
-        "what": "component timing smoke on dev seeds (T4 parts, bias values, other experiments)",
-        "seconds": 10.7,
-        "note": "sum of printed component times"
-      },
-      {
-        "what": "report run 1 (commit 6bc3cf5)",
-        "seconds": 77.11
-      },
-      {
-        "what": "report rerun after summary-only fix (commit 46dbb25)",
-        "seconds": 76.0
-      },
-      {
-        "what": "unit tests (several runs)",
-        "seconds_each": "0.1-0.8"
-      }
-    ],
-    "second_session": [
-      {
-        "what": "unit tests, 38 tests (1 skipped: torch)",
-        "seconds": 0.673
-      },
-      {
-        "what": "paper_assets re-aggregation from results/raw (final run)",
-        "seconds": 1.21,
-        "note": "run about 8 times during writing, about 1.2 s each"
-      },
-      {
-        "what": "tex_check static checks",
-        "seconds": 0.037
-      },
-      {
-        "what": "real01r check-env/contract, real02 check-env/calibrate",
-        "seconds": "<0.01 each",
-        "status": "BLOCKED_DEPENDENCIES"
-      },
-      {
-        "what": "network reads for verification (HF API metadata, 2 small config files, SAELens/TransformerLens sparse git checkouts, arXiv HTML/BibTeX, icml.cc pages, ICML 2026 style zip 228,368 B)",
-        "seconds": "not timed"
-      }
-    ],
-    "not_run": [
-      "P3-REAL-01R contract C3/C4, calibrate, smoke, run, summarize",
-      "P3-REAL-02 calibrate, run, summarize",
-      "any GPU work"
-    ]
-  },
-  "second_session": {
-    "date": "2026-09-26",
-    "experiments_rerun": "none (paper tables are re-aggregated from the unchanged raw CSVs)",
-    "raw_sha256_unchanged": true,
-    "reaggregation": {
-      "script": "src/saeedit/paper_assets.py",
-      "output": "results/reaggregated/paper_numbers.json",
-      "sha256": "ef7e4793845716328bb88dd6dc081d72fe26a9d4b3000faf0f03d44bb9c2b363",
-      "correction": "repair convergence now reported as row counts per cell (ReLU/JumpReLU 72-80/80, TopK 2-66/80); first-session '100%' / '0-88%' were medians of per-instance rates"
-    },
-    "real_model_stage_status": {
-      "real01r": "results/real01r/stage_status.json",
-      "real02": "results/real02/stage_status.json",
-      "verdict": "BLOCKED_DEPENDENCIES"
-    },
-    "manuscript": {
-      "path": "paper/main.tex",
-      "compile": "COMPILE_NOT_RUN",
-      "static_check": "results/reaggregated/tex_check.json",
-      "submission_ready": false,
-      "target_year": 2027,
-      "template_year": 2026
-    }
-  },
-  "third_session": {
-    "date": "2026-09-27",
-    "approval_interpretation": "User instruction to execute P3-CONTRACT-EXEC and a REAL-01R pilot read as approval for CPU packages and the 703,545,978 B of pinned files listed earlier.",
-    "environment": {
-      "venv": "scratchpad (outside repo)",
-      "python": "3.11.15",
-      "torch": "2.14.0+cpu",
-      "transformers": "4.57.6",
-      "transformer_lens": "2.18.0",
-      "sae_lens": "6.51.3",
-      "numpy": "1.26.4",
-      "freeze_file": "results/contract_exec/venv_freeze.txt",
-      "threads": 2
-    },
-    "downloads_bytes": 703545978,
-    "contract_exec": {
-      "v1_float32": {
-        "report": "results/contract_exec/contract_exec_report.json",
-        "sha256": "b071e0dd69737df3bcf88cabe0c8d32edd6c85b3e075691bdfe1df56935101e6",
-        "verdict": "CONTRACT_FAIL_BLOCKED",
-        "seconds": 161.0
-      },
-      "v2_float64": {
-        "report": "results/contract_exec_v2/contract_exec_report.json",
-        "sha256": "797f4ac274223d431797f3321b25e0371d8849b0380fa66f88b893a53144d0f3",
-        "verdict": "CONTRACT_PASS_FLOAT64",
-        "seconds": 391.1
-      }
-    },
-    "real01r_stages": [
-      {
-        "stage": "check-env",
-        "status": "RAN",
-        "seconds": 0.001,
-        "peak_rss_kb": 18356,
-        "verdict": "BLOCKED_DEPENDENCIES",
-        "calibration_sha256": null,
-        "n_rows": null,
-        "row_status_counts": null,
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "contract",
-        "status": "BLOCKED",
-        "seconds": 0.001,
-        "peak_rss_kb": 18060,
-        "verdict": null,
-        "calibration_sha256": null,
-        "n_rows": null,
-        "row_status_counts": null,
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "check-env",
-        "status": "RAN",
-        "seconds": 2.927,
-        "peak_rss_kb": 372744,
-        "verdict": "DEPENDENCIES_AVAILABLE",
-        "calibration_sha256": null,
-        "n_rows": null,
-        "row_status_counts": null,
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "contract",
-        "status": "RAN",
-        "seconds": 71.172,
-        "peak_rss_kb": 2997080,
-        "verdict": "CONTRACT_PASS",
-        "calibration_sha256": null,
-        "n_rows": null,
-        "row_status_counts": null,
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "calibrate",
-        "status": "RAN",
-        "seconds": 330.187,
-        "peak_rss_kb": 2535864,
-        "verdict": null,
-        "calibration_sha256": "ba9a5efae1bed14d258664df92451701f4f80914c22e68bf7916a8b5d043a1f6",
-        "n_rows": null,
-        "row_status_counts": null,
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "smoke",
-        "status": "RAN",
-        "seconds": 94.846,
-        "peak_rss_kb": 3272848,
-        "verdict": null,
-        "calibration_sha256": null,
-        "n_rows": 144,
-        "row_status_counts": {
-          "OK": 112,
-          "OK_UNMATCHED": 24,
-          "INFEASIBLE": 8
-        },
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "run",
-        "status": "RAN",
-        "seconds": 1042.519,
-        "peak_rss_kb": 3638376,
-        "verdict": null,
-        "calibration_sha256": null,
-        "n_rows": 6144,
-        "row_status_counts": {
-          "INFEASIBLE": 272,
-          "OK": 4848,
-          "OK_UNMATCHED": 1024
-        },
-        "recommended_n_docs": null
-      },
-      {
-        "stage": "summarize",
-        "status": "RAN",
-        "seconds": 33.748,
-        "peak_rss_kb": 37220,
-        "verdict": null,
-        "calibration_sha256": null,
-        "n_rows": null,
-        "row_status_counts": null,
-        "recommended_n_docs": null
-      }
-    ],
-    "real01r_raw": {
-      "path": "results/real01r/raw_run.csv",
-      "sha256": "799885f74f19b8c623211c183a55b73ee3f7c8da89e8043767ee3bae8b37d8fe"
-    },
-    "real01r_summary": {
-      "path": "results/real01r/summary.json",
-      "sha256": "948fb5c1181bc12ec83ecfb1dd62dd8c0ccffe5165b9e4180041d774764f2615"
-    },
-    "other_costs": {
-      "pip/uv install seconds": 18,
-      "download seconds": 14.1,
-      "torch drift test seconds": 1.9,
-      "paper_assets seconds": "~1.6 per run"
-    },
-    "manuscript": {
-      "version": "v2",
-      "compile": "COMPILE_NOT_RUN",
-      "static_check": "results/reaggregated/tex_check.json"
-    },
-    "reaggregation": {
-      "output": "results/reaggregated/paper_numbers.json",
-      "sha256": "8a067522fb0338c6b6f46d3f9b8016d821a5a170f36bacd0b6b3f06aa27ce3e7",
-      "note": "supersedes second_session.reaggregation sha (now includes contract-exec and pilot assets); raw toy CSVs unchanged"
-    },
-    "tests": {
-      "stdlib": "38 tests, 1 skipped (torch absent in system python)",
-      "venv_torch": "38 tests incl. torch drift test: see commit log"
-    },
-    "toy_raw_sha256_unchanged": true
+  "P3-T4b-SPARSITY-EXPLORATORY": {
+   "engineering_status": "RAN",
+   "wall_seconds": 14.366897583007812,
+   "n_rows": 9536,
+   "row_status_counts": {
+    "OK": 9504,
+    "SKIP": 32
+   },
+   "raw_file": "results/raw/sparsity_exploratory.csv",
+   "raw_sha256": "1d27af0cc6cb804302c676cfa3a94624845378a9b7ed010ece3fc08b19631aeb"
   }
+ },
+ "elapsed_seconds": 76.00005221366882,
+ "verification": {
+  "V1": "PASS",
+  "V2": "PASS",
+  "V3": "PASS",
+  "V4": "PASS",
+  "V5": "PASS",
+  "T3_checks": "PASS",
+  "V6": "PASS",
+  "V7": "PASS",
+  "V8": "DESCRIPTIVE"
+ },
+ "summary_file": "results/summary.json",
+ "summary_sha256": "a68509a3aee27f3d1e846f1740efd676ca4e9f8a71d5c35dbd3c15e00ea2583d",
+ "finished_unix": 1790433367.5806794,
+ "reproducibility": {
+  "first_report_run": {
+   "git_commit": "6bc3cf5b80ec22a157ba140910da24121c2d2bb6",
+   "code_dirty": false,
+   "elapsed_seconds": 77.02,
+   "note": "summary.json of this run had a boolean-aggregation bug; superseded"
+  },
+  "this_run": {
+   "git_commit": "46dbb2575fd95226cb63fdfd25ef38bf9c34909c",
+   "reason": "rerun after summary-only fix (commit 46dbb25)"
+  },
+  "raw_sha256_identical_across_runs": true
+ },
+ "compute_ledger": {
+  "note": "All CPU, single process. First-session numbers are wall-clock values printed by the commands at the time; none were estimated.",
+  "first_session": [
+   {
+    "what": "dev run, seeds 0-2 (v1 config)",
+    "seconds": 8.36
+   },
+   {
+    "what": "dev run, seeds 0-2 (v2 config, with T4b)",
+    "seconds": 11.34
+   },
+   {
+    "what": "component timing smoke on dev seeds (T4 parts, bias values, other experiments)",
+    "seconds": 10.7,
+    "note": "sum of printed component times"
+   },
+   {
+    "what": "report run 1 (commit 6bc3cf5)",
+    "seconds": 77.11
+   },
+   {
+    "what": "report rerun after summary-only fix (commit 46dbb25)",
+    "seconds": 76.0
+   },
+   {
+    "what": "unit tests (several runs)",
+    "seconds_each": "0.1-0.8"
+   }
+  ],
+  "second_session": [
+   {
+    "what": "unit tests, 38 tests (1 skipped: torch)",
+    "seconds": 0.673
+   },
+   {
+    "what": "paper_assets re-aggregation from results/raw (final run)",
+    "seconds": 1.21,
+    "note": "run about 8 times during writing, about 1.2 s each"
+   },
+   {
+    "what": "tex_check static checks",
+    "seconds": 0.037
+   },
+   {
+    "what": "real01r check-env/contract, real02 check-env/calibrate",
+    "seconds": "<0.01 each",
+    "status": "BLOCKED_DEPENDENCIES"
+   },
+   {
+    "what": "network reads for verification (HF API metadata, 2 small config files, SAELens/TransformerLens sparse git checkouts, arXiv HTML/BibTeX, icml.cc pages, ICML 2026 style zip 228,368 B)",
+    "seconds": "not timed"
+   }
+  ],
+  "not_run": [
+   "P3-REAL-01R contract C3/C4, calibrate, smoke, run, summarize",
+   "P3-REAL-02 calibrate, run, summarize",
+   "any GPU work"
+  ]
+ },
+ "second_session": {
+  "date": "2026-09-26",
+  "experiments_rerun": "none (paper tables are re-aggregated from the unchanged raw CSVs)",
+  "raw_sha256_unchanged": true,
+  "reaggregation": {
+   "script": "src/saeedit/paper_assets.py",
+   "output": "results/reaggregated/paper_numbers.json",
+   "sha256": "ef7e4793845716328bb88dd6dc081d72fe26a9d4b3000faf0f03d44bb9c2b363",
+   "correction": "repair convergence now reported as row counts per cell (ReLU/JumpReLU 72-80/80, TopK 2-66/80); first-session '100%' / '0-88%' were medians of per-instance rates"
+  },
+  "real_model_stage_status": {
+   "real01r": "results/real01r/stage_status.json",
+   "real02": "results/real02/stage_status.json",
+   "verdict": "BLOCKED_DEPENDENCIES"
+  },
+  "manuscript": {
+   "path": "paper/main.tex",
+   "compile": "COMPILE_NOT_RUN",
+   "static_check": "results/reaggregated/tex_check.json",
+   "submission_ready": false,
+   "target_year": 2027,
+   "template_year": 2026
+  }
+ },
+ "third_session": {
+  "date": "2026-09-27",
+  "approval_interpretation": "User instruction to execute P3-CONTRACT-EXEC and a REAL-01R pilot read as approval for CPU packages and the 703,545,978 B of pinned files listed earlier.",
+  "environment": {
+   "venv": "scratchpad (outside repo)",
+   "python": "3.11.15",
+   "torch": "2.14.0+cpu",
+   "transformers": "4.57.6",
+   "transformer_lens": "2.18.0",
+   "sae_lens": "6.51.3",
+   "numpy": "1.26.4",
+   "freeze_file": "results/contract_exec/venv_freeze.txt",
+   "threads": 2
+  },
+  "downloads_bytes": 703545978,
+  "contract_exec": {
+   "v1_float32": {
+    "report": "results/contract_exec/contract_exec_report.json",
+    "sha256": "b071e0dd69737df3bcf88cabe0c8d32edd6c85b3e075691bdfe1df56935101e6",
+    "verdict": "CONTRACT_FAIL_BLOCKED",
+    "seconds": 161.0
+   },
+   "v2_float64": {
+    "report": "results/contract_exec_v2/contract_exec_report.json",
+    "sha256": "797f4ac274223d431797f3321b25e0371d8849b0380fa66f88b893a53144d0f3",
+    "verdict": "CONTRACT_PASS_FLOAT64",
+    "seconds": 391.1
+   }
+  },
+  "real01r_stages": [
+   {
+    "stage": "check-env",
+    "status": "RAN",
+    "seconds": 0.001,
+    "peak_rss_kb": 18356,
+    "verdict": "BLOCKED_DEPENDENCIES",
+    "calibration_sha256": null,
+    "n_rows": null,
+    "row_status_counts": null,
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "contract",
+    "status": "BLOCKED",
+    "seconds": 0.001,
+    "peak_rss_kb": 18060,
+    "verdict": null,
+    "calibration_sha256": null,
+    "n_rows": null,
+    "row_status_counts": null,
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "check-env",
+    "status": "RAN",
+    "seconds": 2.927,
+    "peak_rss_kb": 372744,
+    "verdict": "DEPENDENCIES_AVAILABLE",
+    "calibration_sha256": null,
+    "n_rows": null,
+    "row_status_counts": null,
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "contract",
+    "status": "RAN",
+    "seconds": 71.172,
+    "peak_rss_kb": 2997080,
+    "verdict": "CONTRACT_PASS",
+    "calibration_sha256": null,
+    "n_rows": null,
+    "row_status_counts": null,
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "calibrate",
+    "status": "RAN",
+    "seconds": 330.187,
+    "peak_rss_kb": 2535864,
+    "verdict": null,
+    "calibration_sha256": "ba9a5efae1bed14d258664df92451701f4f80914c22e68bf7916a8b5d043a1f6",
+    "n_rows": null,
+    "row_status_counts": null,
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "smoke",
+    "status": "RAN",
+    "seconds": 94.846,
+    "peak_rss_kb": 3272848,
+    "verdict": null,
+    "calibration_sha256": null,
+    "n_rows": 144,
+    "row_status_counts": {
+     "OK": 112,
+     "OK_UNMATCHED": 24,
+     "INFEASIBLE": 8
+    },
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "run",
+    "status": "RAN",
+    "seconds": 1042.519,
+    "peak_rss_kb": 3638376,
+    "verdict": null,
+    "calibration_sha256": null,
+    "n_rows": 6144,
+    "row_status_counts": {
+     "INFEASIBLE": 272,
+     "OK": 4848,
+     "OK_UNMATCHED": 1024
+    },
+    "recommended_n_docs": null
+   },
+   {
+    "stage": "summarize",
+    "status": "RAN",
+    "seconds": 33.748,
+    "peak_rss_kb": 37220,
+    "verdict": null,
+    "calibration_sha256": null,
+    "n_rows": null,
+    "row_status_counts": null,
+    "recommended_n_docs": null
+   }
+  ],
+  "real01r_raw": {
+   "path": "results/real01r/raw_run.csv",
+   "sha256": "799885f74f19b8c623211c183a55b73ee3f7c8da89e8043767ee3bae8b37d8fe"
+  },
+  "real01r_summary": {
+   "path": "results/real01r/summary.json",
+   "sha256": "948fb5c1181bc12ec83ecfb1dd62dd8c0ccffe5165b9e4180041d774764f2615"
+  },
+  "other_costs": {
+   "pip/uv install seconds": 18,
+   "download seconds": 14.1,
+   "torch drift test seconds": 1.9,
+   "paper_assets seconds": "~1.6 per run"
+  },
+  "manuscript": {
+   "version": "v2",
+   "compile": "COMPILE_NOT_RUN",
+   "static_check": "results/reaggregated/tex_check.json"
+  },
+  "reaggregation": {
+   "output": "results/reaggregated/paper_numbers.json",
+   "sha256": "8a067522fb0338c6b6f46d3f9b8016d821a5a170f36bacd0b6b3f06aa27ce3e7",
+   "note": "supersedes second_session.reaggregation sha (now includes contract-exec and pilot assets); raw toy CSVs unchanged"
+  },
+  "tests": {
+   "stdlib": "38 tests, 1 skipped (torch absent in system python)",
+   "venv_torch": "38 tests incl. torch drift test: see commit log"
+  },
+  "toy_raw_sha256_unchanged": true,
+  "approval_interpretation_note": "This field records Claude's interpretation of an instruction to execute; it is not a user sentence approving installs or downloads (clarified in the fourth session)."
+ },
+ "fourth_session": {
+  "date": "2026-09-27",
+  "approval": "No resource approval block was received this session. No installation, download, GPU, paid API, external upload or web compilation was done. Reused the scratch venv and HF cache from the third session offline (HF_HUB_OFFLINE=1).",
+  "user_server_path": "/nvmedata/dgkang/papers/<project_id>/ not used (this checkout is a separate cloud sandbox; nothing moved; /data000 not touched)",
+  "readout_closure": {
+   "report": "results/readout_closure/readout_closure_report.json",
+   "wall_seconds": 842.7,
+   "cpu_seconds": 1481.0,
+   "threads": 2,
+   "peak_rss_kb": 5594756,
+   "k9_raw_median_reproduced": 124.6776018192275,
+   "k9_canonical_max": 3.7665463804514236e-15,
+   "admissible_raw_minus_canonical_max": 3.637978807091713e-12
+  },
+  "reagg": {
+   "dir": "results/real01r_reagg",
+   "wall_seconds": 5.2,
+   "threads": 1,
+   "inputs_unchanged": true
+  },
+  "real02_lx": {
+   "configs": [
+    "configs/p3_real02_lx.json (v1, commit 656b6f0)",
+    "configs/p3_real02_lx_v1_1.json (single-shot amendment, commit 876e77c)"
+   ],
+   "stages": [
+    {
+     "stage": "calibrate",
+     "status": "BLOCKED",
+     "seconds": 158.407,
+     "peak_rss_kb": 2024928,
+     "unix_time": 1790487086.6130228,
+     "reason": "only 5 calibration windows with lexicon hits"
+    },
+    {
+     "stage": "calibrate",
+     "status": "BLOCKED",
+     "seconds": 629.604,
+     "peak_rss_kb": 2077768,
+     "unix_time": 1790487788.8722074,
+     "reason": "only 13 calibration windows with lexicon hits",
+     "config_id": "p3_real02_lx_v1_1",
+     "n_nohit_windows": 1930
+    },
+    {
+     "stage": "run",
+     "status": "BLOCKED",
+     "seconds": 2.034,
+     "peak_rss_kb": 320680,
+     "unix_time": 1790487812.8362436,
+     "reason": "calibration not frozen"
+    },
+    {
+     "stage": "summarize",
+     "status": "NOT_RUN",
+     "seconds": 0.0,
+     "peak_rss_kb": 18116,
+     "unix_time": 1790487813.2825844,
+     "reason": "no raw_run.csv"
+    }
+   ],
+   "verdict": "BLOCKED",
+   "test_documents_read": false
+  },
+  "tests": {
+   "stdlib": "41 run, 4 skipped, OK",
+   "torch": "1 OK",
+   "model_adapter": "3 OK (P3_MODEL_TESTS=1), 9.0 s"
+  },
+  "manuscript": {
+   "version": "v3",
+   "compile": "COMPILE_NOT_RUN (no TeX installed)",
+   "static_check": "results/reaggregated/tex_check.json"
+  }
+ }
 }
