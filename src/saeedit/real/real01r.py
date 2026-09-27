@@ -27,6 +27,13 @@ from .contract import environment_status, load_contract
 from .stats import cluster_bootstrap, paired_unit_differences, per_unit_means
 
 TARGET_KINDS = ("active", "inactive")
+MIN_UNITS_FOR_READOUT = 10  # added before any pilot result was seen: fewer documents -> no gate readout
+CURVE_METRICS = ("target_gain", "target_err_rel", "drift_orig_active_rel", "drift_newly_active_rel", "drift_all_nontarget_rel",
+                 "kl_next_token", "dnll_true_next", "edit_norm", "n_newly_active")
+PAIRS = (("target_matched", "jacobian_ln", "decoder"), ("target_matched", "jacobian_ln", "encoder_grad"),
+         ("target_matched", "jacobian_ln", "decoder_calib_rescaled"), ("target_matched", "mean_only", "decoder"),
+         ("equal_norm", "jacobian_ln", "decoder"), ("equal_norm", "encoder_grad", "decoder"),
+         ("equal_norm", "mean_only", "decoder"))
 # All edit directions are admissible (projected by P = I - 11^T/d) except mean_only, the
 # diagnostic control that lies entirely in the model-invisible 1-direction.
 METHODS_EQUAL_NORM = ("decoder", "encoder_grad", "jacobian_ln", "random", "mean_only")
@@ -122,7 +129,8 @@ def stage_contract(args, cfg, contract):
     docs = load_documents(contract, args.cache_dir, args.allow_download)
     calib = [d for d in docs if d.split == "calibration"]
     D.tokenize_documents(calib, be.tokenize, be.bos_id)
-    wins = [w for d in calib for i, w in enumerate(d.windows) if i in capped_windows(d, 2)]
+    # full-length windows only, so they can be batched (tails of 64-127 tokens are used elsewhere)
+    wins = [w for d in calib for i, w in enumerate(d.windows) if i in capped_windows(d, 2) and len(w) == 128]
     noop = be.check_noop(torch.tensor(wins[:4]))
     recon = be.check_reconstruction(wins[:64])
     ok = noop["pass"] and recon["pass"]
@@ -409,6 +417,11 @@ def stage_summarize(args, cfg, contract):
         record(args.out, "summarize", "NOT_RUN", t0, reason="no raw_run.csv")
         return
     rows = list(csv.DictReader(open(path)))
+    for r in rows:  # derived: target change per unit edit norm (meaningful in both modes)
+        try:
+            r["target_gain"] = float(r["target_change"]) / float(r["edit_norm"]) if float(r["edit_norm"]) > 0 else ""
+        except (KeyError, ValueError):
+            r["target_gain"] = ""
 
     def num(k):
         def f(r):
@@ -426,21 +439,42 @@ def stage_summarize(args, cfg, contract):
             st[r.get("status")] += 1
         out["infeasible_counts"][f"{mode}|{dose}|{meth}|{kind}"] = dict(st)
         ok = [r for r in rs if r.get("status", "").startswith("OK")]
-        for metric in ("target_err_rel", "drift_orig_active_rel", "drift_newly_active_rel", "drift_all_nontarget_rel",
-                       "kl_next_token", "edit_norm"):
+        for metric in CURVE_METRICS:
             ci = cluster_bootstrap(per_unit_means(ok, "doc_id", num(metric)))
-            out["curves"].append({"mode": mode, "dose": dose, "method": meth, "target_kind": kind, "metric": metric, **ci})
+            out["curves"].append({"mode": mode, "dose": dose, "method": meth, "target_kind": kind, "metric": metric,
+                                  "n_rows": len(ok), **ci})
     key = lambda r: (r["doc_id"], r["feature"], r["target_kind"], r["mode"], r["dose"])
     ok_rows = [r for r in rows if r.get("status", "").startswith("OK")]
-    for mode, a, b in (("target_matched", "jacobian_ln", "decoder"), ("target_matched", "jacobian_ln", "encoder_grad"),
-                       ("equal_norm", "jacobian_ln", "decoder"), ("equal_norm", "encoder_grad", "decoder")):
-        for metric in ("drift_all_nontarget_rel", "drift_orig_active_rel", "drift_newly_active_rel", "kl_next_token"):
+    for mode, a, b in PAIRS:
+        for metric in ("drift_all_nontarget_rel", "drift_orig_active_rel", "drift_newly_active_rel", "target_err_rel",
+                       "kl_next_token", "dnll_true_next", "edit_norm"):
             sub = [r for r in ok_rows if r["mode"] == mode]
             for kind in TARGET_KINDS:
-                diffs = paired_unit_differences([r for r in sub if r["target_kind"] == kind], "doc_id", key,
-                                                "method", a, b, num(metric))
-                out["paired"].append({"mode": mode, "a": a, "b": b, "metric": metric, "target_kind": kind,
-                                      **cluster_bootstrap(diffs)})
+                for dose in sorted({r["dose"] for r in sub}):
+                    diffs = paired_unit_differences([r for r in sub if r["target_kind"] == kind and r["dose"] == dose],
+                                                    "doc_id", key, "method", a, b, num(metric))
+                    out["paired"].append({"mode": mode, "a": a, "b": b, "metric": metric, "target_kind": kind,
+                                          "dose": dose, **cluster_bootstrap(diffs)})
+    # cost summary (per group of edits that shares one forward pass)
+    fw = {}
+    for r in ok_rows:
+        if r.get("forward_seconds_group"):
+            fw[(r["doc_id"], r["feature"], r["target_kind"])] = float(r["forward_seconds_group"])
+    solve = [float(r["solve_seconds"]) for r in ok_rows if r.get("solve_seconds")]
+    out["cost"] = {"quality_groups": len(fw), "forward_seconds_per_quality_group_median": statistics.median(fw.values()) if fw else None,
+                   "ln_solve_seconds_median": statistics.median(solve) if solve else None,
+                   "ln_solve_seconds_max": max(solve) if solve else None,
+                   "stage_status": "see stage_status.json (seconds, peak_rss_kb)"}
+    out["units"] = {"n_test_documents": len({r["doc_id"] for r in ok_rows}), "n_features": len({r["feature"] for r in ok_rows}),
+                    "n_rows": len(rows), "note": "bootstrap resamples documents; features and tokens are not independent units"}
+    # compact table for the paper
+    tab = os.path.join(args.out, "pilot_table.csv")
+    with open(tab, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["mode", "target_kind", "dose", "method", "metric", "n_docs", "median", "lo", "hi", "n_rows"])
+        for c in out["curves"]:
+            w.writerow([c["mode"], c["target_kind"], c["dose"], c["method"], c["metric"], c["n_units"],
+                        c["estimate"], c["lo"], c["hi"], c["n_rows"]])
     # G1-G3 readouts at the q99 target dose (operational, not significance tests)
     q99 = [r for r in ok_rows if r["mode"] == "target_matched" and r["dose"] == "q99"]
     g1 = cluster_bootstrap(per_unit_means([r for r in q99 if r["method"] == "decoder_calib_rescaled"], "doc_id",
@@ -453,6 +487,8 @@ def stage_summarize(args, cfg, contract):
     def side(ci, thr, stop_if_below):
         if ci["lo"] is None:
             return "NOT_RUN"
+        if ci["n_units"] < MIN_UNITS_FOR_READOUT:
+            return "INSUFFICIENT_UNITS"
         if stop_if_below:
             return "STOP_SIDE" if ci["hi"] < thr else ("CONTINUE_SIDE" if ci["lo"] >= thr else "INCONCLUSIVE")
         return "STOP_SIDE" if ci["lo"] >= thr else ("CONTINUE_SIDE" if ci["hi"] < thr else "INCONCLUSIVE")
