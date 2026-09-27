@@ -1,0 +1,17 @@
+dose,target_kind,set,n_points,n_intersection,exclusion_rate,n_docs_all,n_docs_intersection,not_matched_decoder,not_matched_encoder_grad,not_matched_jacobian_ln,not_matched_random
+q50,active,primary,64,64,0.0,42,42,0,0,0,
+q50,active,secondary,64,31,0.515625,42,24,0,0,0,33
+q50,inactive,primary,64,64,0.0,40,40,0,0,0,
+q50,inactive,secondary,64,29,0.546875,40,23,0,0,0,35
+q90,active,primary,64,64,0.0,42,42,0,0,0,
+q90,active,secondary,64,31,0.515625,42,24,0,0,0,33
+q90,inactive,primary,64,64,0.0,40,40,0,0,0,
+q90,inactive,secondary,64,29,0.546875,40,23,0,0,0,35
+q99,active,primary,64,64,0.0,42,42,0,0,0,
+q99,active,secondary,64,31,0.515625,42,24,0,0,0,33
+q99,inactive,primary,64,64,0.0,40,40,0,0,0,
+q99,inactive,secondary,64,29,0.546875,40,23,0,0,0,35
+2xq99,active,primary,64,64,0.0,42,42,0,0,0,
+2xq99,active,secondary,64,31,0.515625,42,24,0,0,0,33
+2xq99,inactive,primary,64,64,0.0,40,40,0,0,0,
+2xq99,inactive,secondary,64,29,0.546875,40,23,0,0,0,35
