@@ -1,0 +1,21 @@
+{
+  "config_id": "p3_real01r_pilot_v1",
+  "experiment_id": "P3-REAL-01R-PILOT",
+  "base_config": "configs/p3_real01r.json",
+  "frozen_before_run": true,
+  "gated_on": "P3-CONTRACT-EXEC v2 = CONTRACT_PASS_FLOAT64 (results/contract_exec_v2/); v1 float32 = CONTRACT_FAIL_BLOCKED is kept",
+  "what_this_is": "A small pilot of REAL-01R on real GPT-2 small + res-jb L8. It checks that the pipeline runs end to end and gives first estimates with uncertainty. Its readouts are NOT gate decisions: G1-G3 are reported descriptively; the decision gate needs the full REAL-01R run.",
+  "overrides_vs_base": {
+    "precision": "float64 (model, SAE, solves), per the contract-exec v2 interpretation rule",
+    "windows_per_doc_cap": 8,
+    "calibration_features": 64,
+    "pilot_features": "8, a seeded subsample ('pilot-features', calibration config id) of the 64 frozen calibration features",
+    "n_docs_per_feature_and_kind": 8,
+    "quality_docs_per_feature_and_kind": 2,
+    "admissible_edits": "all edit directions are projected by P = I - 11^T/d; the LN correction solves (M P) delta = t (J_E P); every row records 'admissible'",
+    "mean_only_control": "delta along 1/sqrt(d) in both modes; diagnostic of internal change without external effect; never counted as a method"
+  },
+  "fixed_from_base": ["document-level split (validation -> calibration, test -> test)", "calibration-only features and doses (q50/q90/q99/2xq99; norm budgets 0.025/0.05/0.1/0.2 x median centred norm)", "equal-norm and target-matched modes kept separate; INFEASIBLE rows kept", "metrics: target error, D_orig (kept/deact), D_new, D_all, edit norm, mean component, KL and dNLL over 16 downstream positions, solve/forward seconds, peak RSS", "document-cluster bootstrap (2000 resamples) of per-document means; features and tokens are never counted as independent samples"],
+  "budget": {"threads": 2, "run_wall_clock_minutes_max": 30},
+  "not_in_scope": ["behavioural or semantic success (P3-REAL-02 not run)", "any claim about external control from internal metrics"]
+}

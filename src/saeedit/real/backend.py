@@ -32,7 +32,7 @@ def peak_rss_kb() -> int:
 
 class Backend:
     def __init__(self, contract: dict, cache_dir: Optional[str] = None, allow_download: bool = False,
-                 threads: int = 2):
+                 threads: int = 2, dtype: str = "float64"):
         import torch
         from huggingface_hub import hf_hub_download
         from safetensors.torch import load_file
@@ -40,13 +40,16 @@ class Backend:
 
         torch.set_num_threads(threads)
         self.torch = torch
+        # float64 by default: P3-CONTRACT-EXEC v2 passed in float64; the float32 run failed the
+        # pre-registered probability tolerance through rounding (results/contract_exec*/).
+        self.dtype = {"float32": torch.float32, "float64": torch.float64}[dtype]
         self.contract = contract
         m, s = contract["model"], contract["sae"]
         lfo = not allow_download
         self.tok = GPT2TokenizerFast.from_pretrained(m["hf_repo"], revision=m["revision"], cache_dir=cache_dir,
                                                      local_files_only=lfo)
         self.model = GPT2LMHeadModel.from_pretrained(m["hf_repo"], revision=m["revision"], cache_dir=cache_dir,
-                                                     local_files_only=lfo, torch_dtype=torch.float32).eval()
+                                                     local_files_only=lfo, dtype=self.dtype).eval()
         cfg_path = hf_hub_download(s["hf_repo"], f"{s['folder']}/cfg.json", revision=s["revision"],
                                    cache_dir=cache_dir, local_files_only=lfo)
         w_path = hf_hub_download(s["hf_repo"], f"{s['folder']}/sae_weights.safetensors", revision=s["revision"],
@@ -60,10 +63,10 @@ class Backend:
         if errors:
             raise ContractError("; ".join(errors))
         w = load_file(w_path)
-        self.W_enc = w["W_enc"].float()  # [d, m]
-        self.W_dec = w["W_dec"].float()  # [m, d]
-        self.b_enc = w["b_enc"].float()  # [m]
-        self.b_dec = w["b_dec"].float()  # [d]
+        self.W_enc = w["W_enc"].to(self.dtype)  # [d, m]
+        self.W_dec = w["W_dec"].to(self.dtype)  # [m, d]
+        self.b_enc = w["b_enc"].to(self.dtype)  # [m]
+        self.b_dec = w["b_dec"].to(self.dtype)  # [d]
         self.layer = int(s["cfg_json_verified"]["hook_point_layer"])
         self.block = self.model.transformer.h[self.layer]
         self.bos_id = int(contract["tokenizer"]["bos_token_id"])
@@ -74,6 +77,14 @@ class Backend:
     @staticmethod
     def center(h):
         return h - h.mean(-1, keepdim=True)
+
+    @staticmethod
+    def proj(v):
+        """Admissible projector P = I - 11^T/d. Every reader of the layer-8 residual is a
+        LayerNorm, so the model is invariant to the 1-direction; admissible edits live in
+        range(P). For delta in range(P) the TL convention (x + delta) and the HF shortcut
+        (centre(h + delta)) give the same SAE input (contract K8)."""
+        return v - v.mean(-1, keepdim=True)
 
     def sae_pre(self, x):
         return (x - self.b_dec) @ self.W_enc + self.b_enc
@@ -146,7 +157,7 @@ class Backend:
                 same = self.model(ids, use_cache=False).logits
             finally:
                 h1.remove()
-            zero = torch.zeros(ids.shape[0], self.W_dec.shape[1])
+            zero = torch.zeros(ids.shape[0], self.W_dec.shape[1], dtype=self.dtype)
             h2 = self.block.register_forward_pre_hook(
                 self._pre_hook(torch.ones(ids.shape[0], dtype=torch.long), zero), with_kwargs=True)
             try:
@@ -203,13 +214,14 @@ class Backend:
         prot = prot[prot != j]
         rows = torch.cat([torch.tensor([j]), prot])
         M = self.W_enc[:, rows].T  # [k, d]
-        t = torch.zeros(M.shape[0])
+        MP = M - M.mean(-1, keepdim=True)  # J_E P: encoder Jacobian restricted to admissible edits
+        t = torch.zeros(M.shape[0], dtype=torch.float64)
         t[0] = dp_req
-        pinv = torch.linalg.pinv(M.double(), rtol=rtol)
-        delta = (pinv @ t.double()).float()
-        sv = torch.linalg.svdvals(M.double())
+        pinv = torch.linalg.pinv(MP.double(), rtol=rtol)
+        delta = (pinv @ t).to(self.dtype)  # lies in range((MP)^T), a subspace of range(P)
+        sv = torch.linalg.svdvals(MP.double())
         rank = int((sv > sv[0] * rtol).sum().item()) if sv.numel() else 0
-        res = (t - M @ delta).norm().item() / max(abs(dp_req), 1e-30)
+        res = (t.to(self.dtype) - M @ delta).norm().item() / max(abs(dp_req), 1e-30)
         return {"delta": delta, "rank": rank, "n_constraints": int(M.shape[0]), "residual_rel": res,
                 "solve_seconds": time.perf_counter() - t0}
 

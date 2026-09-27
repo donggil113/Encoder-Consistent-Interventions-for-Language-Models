@@ -27,8 +27,10 @@ from .contract import environment_status, load_contract
 from .stats import cluster_bootstrap, paired_unit_differences, per_unit_means
 
 TARGET_KINDS = ("active", "inactive")
-METHODS_EQUAL_NORM = ("decoder", "encoder_grad", "jacobian_ln", "random")
-METHODS_MATCHED = ("decoder", "encoder_grad", "jacobian_ln", "random")
+# All edit directions are admissible (projected by P = I - 11^T/d) except mean_only, the
+# diagnostic control that lies entirely in the model-invisible 1-direction.
+METHODS_EQUAL_NORM = ("decoder", "encoder_grad", "jacobian_ln", "random", "mean_only")
+METHODS_MATCHED = ("decoder", "encoder_grad", "jacobian_ln", "random", "mean_only")
 UNMATCHED_BASELINES = ("decoder_calib_rescaled", "decoder_plain")
 
 
@@ -113,7 +115,7 @@ def stage_contract(args, cfg, contract):
     from .backend import Backend, ContractError
 
     try:
-        be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"])
+        be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"], args.dtype)
     except ContractError as e:
         record(args.out, "contract", "BLOCKED", t0, reason=f"contract violation: {e}")
         return
@@ -149,7 +151,7 @@ def stage_calibrate(args, cfg, contract):
     import torch
     from .backend import Backend
 
-    be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"])
+    be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"], args.dtype)
     docs = load_documents(contract, args.cache_dir, args.allow_download)
     calib = [d for d in docs if d.split == "calibration"]
     D.tokenize_documents(calib, be.tokenize, be.bos_id)
@@ -158,9 +160,11 @@ def stage_calibrate(args, cfg, contract):
     fire = torch.zeros(m, dtype=torch.long)
     n_tok = 0
     norms: List[float] = []
+    cached = []
     for d in calib:
         for _, _, x in _encode_windows(be, d, cap):
             x = x[1:]
+            cached.append(x)
             a, mask = be.act(be.sae_pre(x))
             fire += mask.sum(0)
             n_tok += x.shape[0]
@@ -170,9 +174,9 @@ def stage_calibrate(args, cfg, contract):
     feats = Q.sample_features(pool, cc["n_features"], cc["feature_sampling_seed"])
     pos_acts: Dict[int, List[float]] = {j: [] for j in feats}
     fidx = torch.tensor(feats)
-    for d in calib:
-        for _, _, x in _encode_windows(be, d, cap):
-            a = be.act(be.sae_pre(x[1:]))[0][:, fidx]
+    for x in cached:
+        if True:
+            a = be.act(be.sae_pre(x))[0][:, fidx]
             for c, j in enumerate(feats):
                 col = a[:, c]
                 pos_acts[j].extend(col[col > 0].tolist())
@@ -194,20 +198,24 @@ def _edit_rows(be, x, j, feat_doses, budgets, kind, rng_seed):
     import torch
     out = []
     E_j = be.enc_col(j)
-    dirs = {"decoder": be.dec_row(j), "encoder_grad": E_j,
-            "random": torch.randn(x.shape[0], generator=torch.Generator().manual_seed(rng_seed))}
+    d = x.shape[0]
+    dec_adm = be.proj(be.dec_row(j))
+    dirs = {"decoder": dec_adm, "encoder_grad": be.proj(E_j),
+            "random": be.proj(torch.randn(d, generator=torch.Generator().manual_seed(rng_seed)).to(x.dtype)),
+            "mean_only": torch.ones(d, dtype=x.dtype) / d ** 0.5}
     ln_unit = be.jacobian_ln(x, j, 1.0)
     dirs["jacobian_ln"] = ln_unit["delta"]
     pre = be.sae_pre(x)
     p_j = pre[j].item()
     a_j = max(p_j, 0.0)
-    g_dec = (E_j @ be.dec_row(j)).item()
+    g_dec = (E_j @ dec_adm).item()
     for bname, rho in budgets.items():
         for meth in METHODS_EQUAL_NORM:
             u = dirs[meth]
             sign = 1.0 if (E_j @ u).item() >= 0 else -1.0
             delta = sign * rho * u / u.norm()
-            out.append(({"mode": "equal_norm", "dose": bname, "method": meth, "status": "OK"}, delta, rho, rho))
+            out.append(({"mode": "equal_norm", "dose": bname, "method": meth, "status": "OK",
+                         "admissible": int(meth != "mean_only")}, delta, rho, rho))
     for dname, alpha in feat_doses.items():
         for meth in METHODS_MATCHED:
             if meth == "jacobian_ln":
@@ -222,16 +230,17 @@ def _edit_rows(be, x, j, feat_doses, budgets, kind, rng_seed):
             if s is None:
                 out.append(({**meta, "status": "INFEASIBLE", "reason": "no s >= 0 reaches the target"}, None, alpha, alpha))
             else:
-                out.append(({**meta, "status": "OK", "scale_s": s}, s * dirs[meth], alpha, alpha))
+                out.append(({**meta, "status": "OK", "scale_s": s, "admissible": int(meth != "mean_only")},
+                            s * dirs[meth], alpha, alpha))
         # deployable, unmatched baselines
         if g_dec > 0:
             out.append(({"mode": "target_matched", "dose": dname, "method": "decoder_calib_rescaled",
-                         "status": "OK_UNMATCHED"}, (alpha / g_dec) * be.dec_row(j), alpha, alpha))
+                         "status": "OK_UNMATCHED", "admissible": 1}, (alpha / g_dec) * dec_adm, alpha, alpha))
         else:
             out.append(({"mode": "target_matched", "dose": dname, "method": "decoder_calib_rescaled",
                          "status": "INFEASIBLE", "reason": "E_j . D_j <= 0"}, None, alpha, alpha))
-        out.append(({"mode": "target_matched", "dose": dname, "method": "decoder_plain", "status": "OK_UNMATCHED"},
-                    alpha * be.dec_row(j), alpha, alpha))
+        out.append(({"mode": "target_matched", "dose": dname, "method": "decoder_plain", "status": "OK_UNMATCHED",
+                     "admissible": 1}, alpha * dec_adm, alpha, alpha))
     return out
 
 
@@ -294,7 +303,7 @@ def stage_smoke_or_run(args, cfg, contract, stage: str):
     from .backend import Backend
 
     frozen = Q.load_frozen(os.path.join(args.out, "calibration_frozen.json"), cal["calibration_sha256"])
-    be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"])
+    be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"], args.dtype)
     docs = load_documents(contract, args.cache_dir, args.allow_download)
     split = "calibration" if stage == "smoke" else "test"  # smoke never touches test documents
     use = sorted((d for d in docs if d.split == split), key=lambda d: d.doc_id)
@@ -308,6 +317,9 @@ def stage_smoke_or_run(args, cfg, contract, stage: str):
             record(args.out, stage, "BLOCKED", t0, reason="calibration/test overlap", examples=bad[:5])
             return
     feats = frozen["features"]
+    if args.n_features and args.n_features < len(feats):
+        # seeded subsample of the frozen calibration features (chosen before any test window is read)
+        feats = sorted(D.seeded_rng("pilot-features", frozen["config_id"]).sample(feats, args.n_features))
     budgets = frozen["norm_budgets"]["budgets"]
     cap = frozen["windows_per_doc_cap"]
     n_docs = args.n_docs
@@ -378,14 +390,15 @@ def stage_smoke_or_run(args, cfg, contract, stage: str):
         n_groups = sum(1 for _ in {(r["doc_id"], r["feature"], r["target_kind"]) for r in rows_out if "doc_id" in r})
         per_group = (time.time() - t0) / max(n_groups, 1)
         budget_s = 60 * cfg["budget"]["wall_clock_minutes_max"]
-        n_feat = len(frozen["features"])
+        n_feat = args.n_features or len(frozen["features"])
         proj = {n: per_group * n_feat * len(TARGET_KINDS) * n for n in (8, 16, 32)}
         fit = [n for n, sec in proj.items() if sec <= budget_s]
         extra = {"seconds_per_group_upper_bound": per_group, "projected_seconds": proj,
                  "recommended_n_docs": max(fit) if fit else None,
                  "note": "upper bound: includes model/SAE loading and scanning; if None, the run does not fit the budget"}
     record(args.out, stage, "RAN", t0, raw=path, n_rows=len(rows_out), row_status_counts=dict(st),
-           split_used=split, n_docs=n_docs, quality_docs=n_quality, windows_per_doc_cap=cap, **extra)
+           split_used=split, n_docs=n_docs, quality_docs=n_quality, windows_per_doc_cap=cap, dtype=args.dtype,
+           features_used=feats, **extra)
 
 
 def stage_summarize(args, cfg, contract):
@@ -462,6 +475,8 @@ def main(argv=None) -> int:
     ap.add_argument("--windows-per-doc", type=int, default=8)
     ap.add_argument("--n-docs", type=int, default=8, help="per feature and target kind; fixed from the smoke stage")
     ap.add_argument("--quality-docs", type=int, default=2, help="documents per (feature, kind) with quality metrics")
+    ap.add_argument("--dtype", default="float64", choices=["float32", "float64"])
+    ap.add_argument("--n-features", type=int, default=0, help="pilot: seeded subsample of the frozen features")
     args = ap.parse_args(argv)
     cfg = json.load(open(args.config))
     contract = load_contract(cfg["contract"])
