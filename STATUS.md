@@ -1,6 +1,43 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-09-26 (second session). Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
+
+## Third session summary (read first)
+
+- **Order.** P3-CONTRACT-EXEC was run before any REAL-02 work, as instructed. Model/SAE
+  revisions, layer 8 and hook site are unchanged.
+- **Resources.**
+  - The instruction to execute was read as approval for the resources listed in the second
+    session: CPU packages and the pinned files.
+  - The packages are installed in a scratch venv outside the repo: torch 2.14.0+cpu,
+    transformers 4.57.6, transformer-lens 2.18.0, sae-lens 6.51.3 and pyarrow.
+    `results/contract_exec/venv_freeze.txt` lists all 105 packages.
+  - The pinned files come to 703,545,978 B, exactly the contract total.
+  - Everything runs on CPU with 2 threads. No GPU, paid API or upload was used.
+- **Contract v1 (float32, pre-registered): `CONTRACT_FAIL_BLOCKED`. Kept.**
+  - K0–K5 pass.
+  - K6 and K7 fail the probability tolerance: 2.8e-5 against 1e-5. KL (≤ 7.7e-7) and the
+    logit residual after removing the center_unembed shift (4.3e-4) pass.
+  - K9 fails the mean-only KL bound: 6e-7 against 1e-8.
+- **Contract v2 (float64 diagnostic, same tolerances, written after v1):
+  `CONTRACT_PASS_FLOAT64`.** Every backend difference is 1e-13–1e-15. The HF shortcut
+  (`x = h − mean(h)`) matches canonical TransformerLens/SAELens for activations, features,
+  post-edit features and post-edit next-token distributions. The no-processing loading
+  path recommended by SAELens (K10) also matches. The float32 failure is rounding on top
+  of a common logit shift of up to 279.
+- **Coordinates.**
+  - The uncentred HF state is wrong for this SAE: FVE 0.003 against 0.83 centred.
+  - Admissible edits are `range(P)`, `P = I − 11ᵀ/d`; the model is invariant to the
+    1-direction (proved).
+  - The LN correction now uses `J_E P`.
+  - Raw decoder edits include a mean component. For them, the TransformerLens and
+    HF-shortcut conventions give SAE readouts that differ by 51–114% of the edit's effect.
+- **Mean-only diagnostic control.** A real-model instance of internal change with no
+  external effect: model KL ≤ 1.3e-15, while the SAE moves by a drift/ρ of 125 (median).
+- **REAL-01R pilot.** See the pilot section below.
+- **REAL-02.** NOT_RUN. The wedding keyword metric is a lexical proxy only; semantic
+  success is NOT_RUN (no independent semantic evaluation).
+
 
 ## Second session summary (read first)
 

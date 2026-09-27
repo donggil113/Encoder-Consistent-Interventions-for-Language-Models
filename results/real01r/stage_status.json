@@ -60,5 +60,155 @@
       },
       "all_available": false
     }
+  },
+  {
+    "stage": "check-env",
+    "status": "RAN",
+    "seconds": 2.927,
+    "peak_rss_kb": 372744,
+    "unix_time": 1790467590.5622733,
+    "env": {
+      "torch": {
+        "available": true,
+        "version": "2.14.0+cpu"
+      },
+      "transformers": {
+        "available": true,
+        "version": "4.57.6"
+      },
+      "safetensors": {
+        "available": true,
+        "version": "0.8.0"
+      },
+      "huggingface_hub": {
+        "available": true,
+        "version": "0.36.2"
+      },
+      "pyarrow": {
+        "available": true,
+        "version": "25.0.1"
+      },
+      "all_available": true
+    },
+    "verdict": "DEPENDENCIES_AVAILABLE"
+  },
+  {
+    "stage": "contract",
+    "status": "RAN",
+    "seconds": 71.172,
+    "peak_rss_kb": 2997080,
+    "unix_time": 1790467716.012983,
+    "C3_noop": {
+      "identity_hook_max_abs_diff": 0.0,
+      "zero_delta_max_abs_diff": 0.0,
+      "pass": true
+    },
+    "C4_reconstruction": {
+      "centred": {
+        "l0": 73.15477362204724,
+        "fve": 0.8224391105424895,
+        "n_tokens": 8128
+      },
+      "uncentred": {
+        "l0": 163.97391732283464,
+        "fve": 0.07094372407766092,
+        "n_tokens": 8128
+      },
+      "pass": true,
+      "reference": {
+        "l0": 60.0,
+        "variance_explained": 0.9,
+        "source": "SAELens pretrained_saes.yaml entry"
+      }
+    },
+    "C1_C2": {
+      "C1_C2_model_cfg_errors": []
+    },
+    "verdict": "CONTRACT_PASS",
+    "n_calibration_docs": 60,
+    "dec_norm_min": 0.9998339275859199,
+    "dec_norm_max": 1.0013393971209328
+  },
+  {
+    "stage": "calibrate",
+    "status": "RAN",
+    "seconds": 330.187,
+    "peak_rss_kb": 2535864,
+    "unix_time": 1790468055.8568988,
+    "calibration_sha256": "ba9a5efae1bed14d258664df92451701f4f80914c22e68bf7916a8b5d043a1f6",
+    "n_features": 64,
+    "pool_size": 21736
+  },
+  {
+    "stage": "smoke",
+    "status": "RAN",
+    "seconds": 94.846,
+    "peak_rss_kb": 3272848,
+    "unix_time": 1790468161.2204158,
+    "raw": "results/real01r/raw_smoke.csv",
+    "n_rows": 144,
+    "row_status_counts": {
+      "OK": 112,
+      "OK_UNMATCHED": 24,
+      "INFEASIBLE": 8
+    },
+    "split_used": "calibration",
+    "n_docs": 1,
+    "quality_docs": 1,
+    "windows_per_doc_cap": 8,
+    "dtype": "float64",
+    "features_used": [
+      2360,
+      8852
+    ],
+    "seconds_per_group_upper_bound": 31.615317344665527,
+    "projected_seconds": {
+      "8": 4046.7606201171875,
+      "16": 8093.521240234375,
+      "32": 16187.04248046875
+    },
+    "recommended_n_docs": null,
+    "note": "upper bound: includes model/SAE loading and scanning; if None, the run does not fit the budget"
+  },
+  {
+    "stage": "run",
+    "status": "RAN",
+    "seconds": 1042.519,
+    "peak_rss_kb": 3638376,
+    "unix_time": 1790469234.0092413,
+    "raw": "results/real01r/raw_run.csv",
+    "n_rows": 6144,
+    "row_status_counts": {
+      "INFEASIBLE": 272,
+      "OK": 4848,
+      "OK_UNMATCHED": 1024
+    },
+    "split_used": "test",
+    "n_docs": 8,
+    "quality_docs": 2,
+    "windows_per_doc_cap": 8,
+    "dtype": "float64",
+    "features_used": [
+      2360,
+      8852,
+      9608,
+      15617,
+      17696,
+      20347,
+      20747,
+      22630
+    ]
+  },
+  {
+    "stage": "summarize",
+    "status": "RAN",
+    "seconds": 33.748,
+    "peak_rss_kb": 37220,
+    "unix_time": 1790469799.288272,
+    "gates": {
+      "G1": "CONTINUE_SIDE",
+      "G2": "CONTINUE_SIDE",
+      "G3": "CONTINUE_SIDE"
+    }
   }
 ]

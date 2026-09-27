@@ -73,10 +73,10 @@ def main(argv=None) -> int:
     used = set(re.findall(r"\\([A-Z][A-Za-z]+)\b", tex))
     own = set(re.findall(r"\\newcommand\{\\([A-Za-z]+)\}", tex))
     known_latex = {"Cref", "R", "LN", "LaTeX"}
-    cand = {u for u in used if (u.startswith(("R", "D", "S", "T", "V", "E", "F")) and u not in known_latex and u not in own)}
+    cand = {u for u in used if (u.startswith(("R", "D", "S", "T", "V", "E", "F", "C", "P")) and u not in known_latex and u not in own)}
     report["number_macros_used"] = sorted(cand & defined)
     report["number_macros_undefined"] = sorted(u for u in cand - defined
-                                               if re.match(r"^(R(one|two|three|foura|fourb|five|zero)|Dense|Sparse|Tx|Tr|Vfive|Vsix|Enc|Feas|Repair|Topk)", u))
+                                               if re.match(r"^(R(one|two|three|foura|fourb|five|zero)|Dense|Sparse|Tx|Tr|Vfive|Vsix|Enc|Feas|Repair|Topk|Cx|Pilot)", u))
 
     # environments
     begins = Counter(re.findall(r"\\begin\{([^}]+)\}", tex))

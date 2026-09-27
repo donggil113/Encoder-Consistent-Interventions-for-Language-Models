@@ -384,3 +384,80 @@ margin.
 so it can only STOP or PROCEED; it cannot support the method. It is also the measurement
 study on its own terms. The superseded P3-REAL-01 design is in `STATUS.md` §6 of the first
 session (git history, commit 7c46116).
+
+---
+
+## 7. Coordinate validity: `P3-CONTRACT-EXEC` (third session, executed)
+
+### 7.1 Setup
+- **Configs.** `configs/p3_contract_exec.json` (v1, float32, pre-registered) and
+  `configs/p3_contract_exec_v2.json` (v2, float64 diagnostic).
+- **What is compared.** The canonical path, TransformerLens 2.18.0 `HookedTransformer`
+  with explicit options (fold_ln, center_writing_weights, center_unembed and
+  fold_value_biases all on; refactor off; BOS prepended) plus SAELens 6.51.3, against the
+  HF shortcut used by the adapter.
+- **Pinned inputs.** Model and SAE revisions, layer 8 and hook site are unchanged. A pinned
+  tokenizer and model object are passed into TransformerLens, so library defaults cannot
+  replace the old contract.
+
+### 7.2 Proposition (admissible subspace), **PROVED** (elementary)
+
+In GPT-2, every read of the residual stream at or after layer 8 goes through a LayerNorm
+that subtracts the mean over d_model: ln_1, ln_2 of later blocks, and ln_f. So adding
+`c·1` at the layer-8 residual leaves all logits unchanged.
+
+*Proof:* `LN(h + c1) = LN(h)`. Later blocks add to the residual without reading the `1`
+component, and ln_f removes it at the end.
+
+Consequences:
+- The admissible perturbations are `range(P)`, with `P = I − 11ᵀ/d`.
+- Split any edit as `δ = Pδ + (1ᵀδ/d)·1`. The second term changes SAE readouts
+  (through `W_encᵀ1`) but not the model.
+- The SAE's coordinates are `x = P h`, i.e. `center_writing_weights` gives exactly the
+  centred HF state (checked: K2 below).
+- For `δ ∈ range(P)`, `P(h + δ) = x + δ`, so the TransformerLens convention and the HF
+  shortcut coincide. Outside `range(P)` they differ by the mean component.
+- The LN correction is therefore posed as `min ‖δ‖ s.t. (M P) δ = t`, i.e. with the
+  encoder Jacobian `J_E P`. Its solution lies in `range(P M^T) ⊆ range(P)`.
+
+### 7.3 Results (`results/contract_exec/`, `results/contract_exec_v2/`)
+
+| Check | float32 (v1, pre-registered) | float64 (v2, same tolerances) |
+|---|---|---|
+| K0 weights and config (SAELens vs pinned file) | bitwise equal; cfg ok | same |
+| K1 tokenizer | 16/16 | 16/16 |
+| K2 activation, `x = h − mean(h)` | 4.2e-6 | 1.0e-14 |
+| K2, uncentred `h` (negative control) | 3.2e-2 | 3.2e-2 |
+| K3 SAE features | 7.7e-6 | 1.6e-14 |
+| K4 L0 / FVE (canonical) | 72.4 / 0.827 | same |
+| K4, uncentred input | L0 176 / FVE 0.003 | same |
+| K5 no-op hooks | 0 | 0 |
+| K6 common logit shift (center_unembed) | max 279 | 279 |
+| K6 residual after shift | 4.3e-4 | 7.4e-13 |
+| K6 max \|Δp\| | **2.8e-5 (> 1e-5: FAIL)** | 5.1e-14 |
+| K6 KL | 7.5e-7 | 1.5e-15 |
+| K7 post-edit feature change | 7.6e-5 | 1.9e-13 |
+| K7 max \|Δp\| | **2.8e-5 (FAIL)** | 5.3e-14 |
+| K7 KL | 7.7e-7 | 1.5e-15 |
+| K9 mean-only KL | **5.1e-7 / 6.0e-7 (> 1e-8: FAIL)** | 7.8e-16 / 1.3e-15 |
+| K9 SAE drift/ρ, median | 125 | 125 |
+| K10 no-processing path | not run | KL 1.9e-15, residual 7.8e-15 |
+| **Verdict** | **CONTRACT_FAIL_BLOCKED** (kept) | **CONTRACT_PASS_FLOAT64** |
+
+Reading:
+- The mapping is exact: the float64 differences are rounding-level.
+- The float32 failure comes from rounding on top of a common logit shift of up to 279.
+- Any float32 KL below about 1e-6 is therefore at the numerical noise floor.
+- The real-model pilot runs in float64.
+
+### 7.4 Diagnostic findings (descriptive)
+- **K8.** Raw decoder rows have a mean component of 3–6% of their norm. Even so, the SAE
+  readout differs between the two conventions by 51–114% (median 79%) of the edit's own
+  readout change. For non-admissible edits, the implementation convention changes the
+  internal measurement.
+- **K9.** A mean-only edit with ρ = 10.1 (10% of the median residual norm) leaves the model
+  invariant, yet moves the SAE by a drift/ρ of 125 (median), with a single feature
+  changing by up to 37.5.
+  - The encoder is unconstrained along a direction the training data never occupies.
+  - This is a real-model instance of internal change with no external effect. It is used
+    as a diagnostic control in the pilot and is never counted as a method.
