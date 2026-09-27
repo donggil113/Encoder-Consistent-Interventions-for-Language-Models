@@ -46,6 +46,8 @@ def main(argv=None) -> int:
     from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
     torch.set_num_threads(fx["model"]["threads"])
+    dt = {"float32": torch.float32, "float64": torch.float64}[fx["model"]["dtype"]]
+    dts = fx["model"]["dtype"]
     torch.manual_seed(0)
     rep = {"config_id": cfg["config_id"], "checks": {}, "versions": {
         "python": sys.version.split()[0], "platform": platform.platform(), "torch": torch.__version__,
@@ -58,20 +60,27 @@ def main(argv=None) -> int:
     t0 = time.time()
     m, s = fx["model"], fx["sae"]
     tok = GPT2TokenizerFast.from_pretrained(m["hf_repo"], revision=m["revision"])
-    hf = GPT2LMHeadModel.from_pretrained(m["hf_repo"], revision=m["revision"], torch_dtype=torch.float32).eval()
+    hf = GPT2LMHeadModel.from_pretrained(m["hf_repo"], revision=m["revision"], dtype=dt).eval()
     w_path = hf_hub_download(s["hf_repo"], f"{s['folder']}/sae_weights.safetensors", revision=s["revision"])
     W = load_file(w_path)
-    W_enc, W_dec, b_enc, b_dec = W["W_enc"], W["W_dec"], W["b_enc"], W["b_dec"]
+    W_enc, W_dec, b_enc, b_dec = (W[k].to(dt) for k in ("W_enc", "W_dec", "b_enc", "b_dec"))
     tlo = fx["transformerlens"]
     # a separate HF copy for TL: TL processes (folds/centres) the weights it is given
-    hf_for_tl = GPT2LMHeadModel.from_pretrained(m["hf_repo"], revision=m["revision"], torch_dtype=torch.float32).eval()
+    hf_for_tl = GPT2LMHeadModel.from_pretrained(m["hf_repo"], revision=m["revision"], dtype=dt).eval()
     tl = HookedTransformer.from_pretrained(
         tlo["model_name"], hf_model=hf_for_tl, tokenizer=tok, fold_ln=tlo["fold_ln"],
         center_writing_weights=tlo["center_writing_weights"], center_unembed=tlo["center_unembed"],
         fold_value_biases=tlo["fold_value_biases"], refactor_factored_attn_matrices=tlo["refactor_factored_attn_matrices"],
-        default_prepend_bos=tlo["default_prepend_bos"], dtype="float32", device="cpu")
+        default_prepend_bos=tlo["default_prepend_bos"], dtype=dt, device="cpu")
     tl.eval()
-    sae = SAE.from_pretrained(s["saelens_release"], s["saelens_sae_id"], device="cpu")
+    sae = SAE.from_pretrained(s["saelens_release"], s["saelens_sae_id"], device="cpu", dtype=dts)
+    tl_np = None
+    if "K10_no_processing_path" in cfg["checks"]:
+        hf_for_np = GPT2LMHeadModel.from_pretrained(m["hf_repo"], revision=m["revision"], dtype=dt).eval()
+        tl_np = HookedTransformer.from_pretrained_no_processing(
+            tlo["model_name"], hf_model=hf_for_np, tokenizer=tok, dtype=dt, device="cpu",
+            default_prepend_bos=tlo["default_prepend_bos"], center_writing_weights=True)
+        tl_np.eval()
     timings["load_seconds"] = time.time() - t0
     L = fx["layer"]
     hook = fx["hook"]["tl"]
@@ -176,7 +185,8 @@ def main(argv=None) -> int:
     # ------------------------------------------------------------------ K4 reconstruction (canonical path)
     t0 = time.time()
     tot = {k: {"l0": 0.0, "sse": 0.0, "n": 0, "x2": 0.0, "sx": torch.zeros(d, dtype=torch.float64)} for k in ("tl", "hf_uncentred")}
-    for dw in pick:
+    pick_rec = pick
+    for dw in pick_rec:
         ids = ids_of(dw)
         x_tl, _ = tl_resid(ids)
         h = hf_hidden(ids)
@@ -225,7 +235,7 @@ def main(argv=None) -> int:
 
     # ------------------------------------------------------------------ K7 / K8 / K9 interventions
     t0 = time.time()
-    ones = torch.ones(d) / d ** 0.5
+    ones = torch.ones(d, dtype=dt) / d ** 0.5
 
     def P(v):
         return v - v.mean()
@@ -285,9 +295,9 @@ def main(argv=None) -> int:
             act = act[act != j]
             M = W_enc[:, torch.cat([torch.tensor([j]), act])].T
             MP = M - M.mean(-1, keepdim=True)  # M P  (J_E P)
-            t = torch.zeros(MP.shape[0])
+            t = torch.zeros(MP.shape[0], dtype=torch.float64)
             t[0] = 1.0
-            dirs["ln"] = (torch.linalg.pinv(MP.double(), rtol=1e-10) @ t.double()).float()
+            dirs["ln"] = (torch.linalg.pinv(MP.double(), rtol=1e-10) @ t).to(dt)
             for name, u in dirs.items():
                 delta = rho * u / u.norm()
                 xe_tl, lg_tl = run_tl_edit(ids, pos, delta)
@@ -335,11 +345,38 @@ def main(argv=None) -> int:
         "max_single_feature_change": max(k9["target_like_change"]), "rho": rho,
         "pass_kl_bound": max(k9["kl_tl"]) <= 1e-8 and max(k9["kl_hf"]) <= 1e-8}
 
-    passed = all(rep["checks"][k]["pass"] for k in ("K0_weights_identity", "K1_tokenizer", "K2_activation",
-                                                     "K3_features", "K4_reconstruction", "K5_noop",
-                                                     "K6_logit_parity", "K7_intervention_parity")) \
-        and rep["checks"]["K9_mean_only_control"]["pass_kl_bound"]
-    rep["verdict"] = "CONTRACT_PASS" if passed else "CONTRACT_FAIL_BLOCKED"
+    if tl_np is not None:
+        k10 = {"resid_rel": [], "prob": [], "kl": [], "logit_vs_hf": []}
+        for dw in parity:
+            ids = ids_of(dw)
+            x_p, lg_p = tl_resid(ids)
+            store = {}
+
+            def f(act, hook):
+                store["x"] = act.detach().clone()
+                return act
+
+            with torch.no_grad():
+                lg_n = tl_np.run_with_hooks(ids, fwd_hooks=[(hook, f)])
+                lg_h = hf(ids, use_cache=False).logits
+            xp, xn = x_p[0, 1:], store["x"][0, 1:]
+            k10["resid_rel"].append(((xp - xn).norm(dim=-1) / xp.norm(dim=-1)).max().item())
+            a, b = lg_p.log_softmax(-1), lg_n.log_softmax(-1)
+            k10["prob"].append((a.exp() - b.exp()).abs().max().item())
+            k10["kl"].append((a.exp() * (a - b)).sum(-1).max().item())
+            k10["logit_vs_hf"].append((lg_n - lg_h).abs().max().item())
+        rep["checks"]["K10_no_processing_path"] = {
+            "max_resid_rel_diff": max(k10["resid_rel"]), "max_prob_diff": max(k10["prob"]), "max_kl": max(k10["kl"]),
+            "max_abs_logit_diff_vs_hf": max(k10["logit_vs_hf"]),
+            "pass": max(k10["resid_rel"]) <= 1e-4 and max(k10["prob"]) <= 1e-5 and max(k10["kl"]) <= 1e-6}
+    required = ["K0_weights_identity", "K1_tokenizer", "K2_activation", "K3_features", "K4_reconstruction",
+                "K5_noop", "K6_logit_parity", "K7_intervention_parity"]
+    if tl_np is not None:
+        required.append("K10_no_processing_path")
+    passed = all(rep["checks"][k]["pass"] for k in required) and rep["checks"]["K9_mean_only_control"]["pass_kl_bound"]
+    label = "CONTRACT_PASS" if dts == "float32" else "CONTRACT_PASS_FLOAT64"
+    rep["dtype"] = dts
+    rep["verdict"] = label if passed else "CONTRACT_FAIL_BLOCKED"
     timings["total_seconds"] = time.time() - t_start
     timings["peak_rss_kb"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     rep["timings"] = timings
