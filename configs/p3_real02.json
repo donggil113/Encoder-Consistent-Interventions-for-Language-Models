@@ -1,5 +1,5 @@
 {
-  "config_id": "p3_real02_v1",
+  "config_id": "p3_real02_v2",
   "experiment_id": "P3-REAL-02",
   "status": "SPECIFIED; NOT_RUN (dependencies and downloads not approved; also gated on P3-REAL-01R readouts)",
   "contract": "configs/p3_contract_gpt2_res_jb_l8.json",
@@ -18,7 +18,8 @@
       "honeymoon"
     ],
     "lexicon_source": "Turner et al., Activation Addition (arXiv:2308.10248), App. H keyword list (checked in source text)",
-    "label_independence": "the label never uses the SAE; the SAE is used only to choose the steered feature on calibration data"
+    "label_independence": "the label never uses the SAE; the SAE is used only to choose the steered feature on calibration data",
+    "label_scope": "lexical proxy only; semantic success is NOT_RUN unless an independent semantic evaluation (validated against humans) is added"
   },
   "data": {
     "calibration_documents": "WikiText-103 validation articles (contract revision)",
@@ -52,7 +53,9 @@
     "not_run_baselines": [
       "SAE-TS",
       "FGAA (require a fitted effect model from many steering runs)"
-    ]
+    ],
+    "mean_only": "rho * 1/sqrt(d): model-invisible negative control (expected: no change in lexical success or KL)",
+    "projection": "decoder, encoder_grad, diffmean and random directions are projected by P before scaling"
   },
   "generation": {
     "new_tokens": 32,
@@ -78,5 +81,9 @@
   },
   "primary_comparison": "per test document, success at each method's calibration-selected budget: jacobian_ln - decoder, jacobian_ln - diffmean, decoder - diffmean; document-cluster bootstrap 95% intervals. Also full success-vs-KL and success-vs-norm curves.",
   "interpretation_rule": "The method claim is supported only if jacobian_ln beats decoder, encoder_grad and diffmean on held-out success at matched calibration KL with intervals excluding 0. Anything else (including internal-metric-only gains) is reported as not supported.",
-  "cli": "PYTHONPATH=src python3 -m saeedit.real.real02 <stage> --config configs/p3_real02.json --out results/real02"
+  "cli": "PYTHONPATH=src python3 -m saeedit.real.real02 <stage> --config configs/p3_real02.json --out results/real02",
+  "changelog": [
+    "v1: second session.",
+    "v2 (third session, before any REAL-02 run): all directions projected onto admissible edits (P = I - 11^T/d; P3-CONTRACT-EXEC K9); LN uses J_E P; mean_only negative control added; float64 per contract v2; label restricted to a lexical proxy; semantic success NOT_RUN without an independent semantic evaluation."
+  ]
 }

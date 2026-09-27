@@ -1,0 +1,26 @@
+\begin{tabular}{llccc}
+\toprule
+Check & Quantity & Tol. & float32 (v1) & float64 (v2) \\
+\midrule
+K0 weights/config identity & bitwise & -- & \checkmark & \checkmark \\
+K1 tokenizer (16 windows) & equal & -- & 16/16 & 16/16 \\
+K2 activation, $x=h-\bar h$ & rel.\ $\ell_2$ & $10^{-4}$ & $4.2\times10^{-6}$ & $1.0\times10^{-14}$ \\
+\quad uncentred $h$ (neg.\ control) & rel.\ $\ell_2$ & -- & 0.0319 & 0.0319 \\
+K3 SAE features & rel.\ $\ell_2$ & $10^{-3}$ & $7.7\times10^{-6}$ & $1.6\times10^{-14}$ \\
+K4 L0 / FVE (canonical) & band & [30,120] / 0.7 & 72.4 / 0.827 & 72.4 / 0.827 \\
+\quad uncentred input & -- & -- & 176 / 0.003 & 176 / 0.003 \\
+K5 no-op hooks & max $|\Delta|$ & 0 & 0 & 0 \\
+K6 common logit shift & max $|c_t|$ & -- & 279 & 279 \\
+\quad residual after shift & max & $10^{-3}$ & $4.3\times10^{-4}$ & $7.4\times10^{-13}$ \\
+\quad probabilities & max $|\Delta p|$ & $10^{-5}$ & $2.8\times10^{-5}$ & $5.1\times10^{-14}$ \\
+\quad KL & max & $10^{-6}$ & $7.5\times10^{-7}$ & $1.5\times10^{-15}$ \\
+K7 post-edit feature change & rel.\ $\ell_2$ & $10^{-3}$ & $7.6\times10^{-5}$ & $1.9\times10^{-13}$ \\
+\quad post-edit probabilities & max $|\Delta p|$ & $10^{-5}$ & $2.8\times10^{-5}$ & $5.3\times10^{-14}$ \\
+\quad post-edit KL & max & $10^{-6}$ & $7.7\times10^{-7}$ & $1.5\times10^{-15}$ \\
+K9 mean-only edit, model KL & max & $10^{-8}$ & $6.0\times10^{-7}$ & $1.3\times10^{-15}$ \\
+\quad SAE drift / $\rho$ (median) & -- & -- & 125 & 125 \\
+K10 no-processing path, KL & max & $10^{-6}$ & not run & $1.9\times10^{-15}$ \\
+\midrule
+Verdict & & & CONTRACT FAIL BLOCKED & CONTRACT PASS FLOAT64 \\
+\bottomrule
+\end{tabular}

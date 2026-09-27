@@ -204,5 +204,162 @@
       "target_year": 2027,
       "template_year": 2026
     }
+  },
+  "third_session": {
+    "date": "2026-09-27",
+    "approval_interpretation": "User instruction to execute P3-CONTRACT-EXEC and a REAL-01R pilot read as approval for CPU packages and the 703,545,978 B of pinned files listed earlier.",
+    "environment": {
+      "venv": "scratchpad (outside repo)",
+      "python": "3.11.15",
+      "torch": "2.14.0+cpu",
+      "transformers": "4.57.6",
+      "transformer_lens": "2.18.0",
+      "sae_lens": "6.51.3",
+      "numpy": "1.26.4",
+      "freeze_file": "results/contract_exec/venv_freeze.txt",
+      "threads": 2
+    },
+    "downloads_bytes": 703545978,
+    "contract_exec": {
+      "v1_float32": {
+        "report": "results/contract_exec/contract_exec_report.json",
+        "sha256": "b071e0dd69737df3bcf88cabe0c8d32edd6c85b3e075691bdfe1df56935101e6",
+        "verdict": "CONTRACT_FAIL_BLOCKED",
+        "seconds": 161.0
+      },
+      "v2_float64": {
+        "report": "results/contract_exec_v2/contract_exec_report.json",
+        "sha256": "797f4ac274223d431797f3321b25e0371d8849b0380fa66f88b893a53144d0f3",
+        "verdict": "CONTRACT_PASS_FLOAT64",
+        "seconds": 391.1
+      }
+    },
+    "real01r_stages": [
+      {
+        "stage": "check-env",
+        "status": "RAN",
+        "seconds": 0.001,
+        "peak_rss_kb": 18356,
+        "verdict": "BLOCKED_DEPENDENCIES",
+        "calibration_sha256": null,
+        "n_rows": null,
+        "row_status_counts": null,
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "contract",
+        "status": "BLOCKED",
+        "seconds": 0.001,
+        "peak_rss_kb": 18060,
+        "verdict": null,
+        "calibration_sha256": null,
+        "n_rows": null,
+        "row_status_counts": null,
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "check-env",
+        "status": "RAN",
+        "seconds": 2.927,
+        "peak_rss_kb": 372744,
+        "verdict": "DEPENDENCIES_AVAILABLE",
+        "calibration_sha256": null,
+        "n_rows": null,
+        "row_status_counts": null,
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "contract",
+        "status": "RAN",
+        "seconds": 71.172,
+        "peak_rss_kb": 2997080,
+        "verdict": "CONTRACT_PASS",
+        "calibration_sha256": null,
+        "n_rows": null,
+        "row_status_counts": null,
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "calibrate",
+        "status": "RAN",
+        "seconds": 330.187,
+        "peak_rss_kb": 2535864,
+        "verdict": null,
+        "calibration_sha256": "ba9a5efae1bed14d258664df92451701f4f80914c22e68bf7916a8b5d043a1f6",
+        "n_rows": null,
+        "row_status_counts": null,
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "smoke",
+        "status": "RAN",
+        "seconds": 94.846,
+        "peak_rss_kb": 3272848,
+        "verdict": null,
+        "calibration_sha256": null,
+        "n_rows": 144,
+        "row_status_counts": {
+          "OK": 112,
+          "OK_UNMATCHED": 24,
+          "INFEASIBLE": 8
+        },
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "run",
+        "status": "RAN",
+        "seconds": 1042.519,
+        "peak_rss_kb": 3638376,
+        "verdict": null,
+        "calibration_sha256": null,
+        "n_rows": 6144,
+        "row_status_counts": {
+          "INFEASIBLE": 272,
+          "OK": 4848,
+          "OK_UNMATCHED": 1024
+        },
+        "recommended_n_docs": null
+      },
+      {
+        "stage": "summarize",
+        "status": "RAN",
+        "seconds": 33.748,
+        "peak_rss_kb": 37220,
+        "verdict": null,
+        "calibration_sha256": null,
+        "n_rows": null,
+        "row_status_counts": null,
+        "recommended_n_docs": null
+      }
+    ],
+    "real01r_raw": {
+      "path": "results/real01r/raw_run.csv",
+      "sha256": "799885f74f19b8c623211c183a55b73ee3f7c8da89e8043767ee3bae8b37d8fe"
+    },
+    "real01r_summary": {
+      "path": "results/real01r/summary.json",
+      "sha256": "948fb5c1181bc12ec83ecfb1dd62dd8c0ccffe5165b9e4180041d774764f2615"
+    },
+    "other_costs": {
+      "pip/uv install seconds": 18,
+      "download seconds": 14.1,
+      "torch drift test seconds": 1.9,
+      "paper_assets seconds": "~1.6 per run"
+    },
+    "manuscript": {
+      "version": "v2",
+      "compile": "COMPILE_NOT_RUN",
+      "static_check": "results/reaggregated/tex_check.json"
+    },
+    "reaggregation": {
+      "output": "results/reaggregated/paper_numbers.json",
+      "sha256": "8a067522fb0338c6b6f46d3f9b8016d821a5a170f36bacd0b6b3f06aa27ce3e7",
+      "note": "supersedes second_session.reaggregation sha (now includes contract-exec and pilot assets); raw toy CSVs unchanged"
+    },
+    "tests": {
+      "stdlib": "38 tests, 1 skipped (torch absent in system python)",
+      "venv_torch": "38 tests incl. torch drift test: see commit log"
+    },
+    "toy_raw_sha256_unchanged": true
   }
 }

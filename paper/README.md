@@ -1,4 +1,6 @@
-# Manuscript v1: "From Feature Edits to Behavioral Effects: Auditing Sparse Autoencoder Interventions"
+# Manuscript v2: "From Feature Edits to Behavioral Effects: Auditing Sparse Autoencoder Interventions"
+
+Order in v2: coordinate validity → fidelity → leakage redistribution → external evaluation.
 
 | Field | Value |
 |---|---|
@@ -52,13 +54,17 @@ None of this has been checked yet.
 ## Provenance of content
 
 - **Numbers.** `generated_numbers.tex`, `tables/*.tex` and `figures/*.dat` are written by
-  `PYTHONPATH=src python3 -m saeedit.paper_assets`, which reads only
-  `results/raw/*.csv`. The input hashes are in `results/reaggregated/paper_numbers.json`.
+  `PYTHONPATH=src python3 -m saeedit.paper_assets`, which reads only `results/raw/*.csv`
+  (toy) and the real-model result files in `results/contract_exec*/` and
+  `results/real01r/`. The input hashes are in `results/reaggregated/paper_numbers.json`.
   Do not edit these files by hand.
 - **References.** In `references.bib`, each entry's source is noted above it: an official
   proceedings page, arXiv BibTeX, the transformer-circuits site, or Crossref/catalogue
   records. No venue was added without an official source.
 - **Claims.** `claims.csv` maps each claim to its evidence files, experiment IDs,
   assumptions and status.
-- **Remaining TODOs.** Two `\todo{...}` markers remain, both for results that do not exist
-  yet: `P3-REAL-01R` and `P3-REAL-02`. They must not be filled by hand.
+- **Remaining TODOs.** Three `\todo{...}` markers remain, all for results that do not exist
+  yet: `P3-REAL-01R-FULL` (all 64 features), `P3-REAL-02` (lexical-proxy behaviour) and
+  `P3-REAL-02-SEM` (semantic evaluation). They must not be filled by hand.
+- **Real-model numbers.** They come from `results/contract_exec*/` and `results/real01r/`,
+  through the same script.

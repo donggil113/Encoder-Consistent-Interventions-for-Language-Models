@@ -461,3 +461,46 @@ Reading:
   - The encoder is unconstrained along a direction the training data never occupies.
   - This is a real-model instance of internal change with no external effect. It is used
     as a diagnostic control in the pilot and is never counted as a method.
+
+## 8. REAL-01R pilot (third session, executed; internal metrics only)
+
+- **Configuration and budget.**
+  - Config: `configs/p3_real01r_pilot.json` (frozen before the test run).
+  - Precision float64; 2 CPU threads.
+  - Calibration: 60 validation articles; 60,677 tokens; feature pool of 21,736; 64
+    features frozen; calibration sha256 `ba9a5efa…`.
+  - Pilot scope: 8 features (seeded subsample) and 54 test documents (the unit).
+  - Doses: q50, q90, q99, 2×q99 (target-matched); budgets 0.025–0.2 × the median norm
+    101.5 (equal-norm).
+- **Results at q99, target-matched, per-document medians** (`results/real01r/summary.json`,
+  `paper/tables/tab_pilot_*.tex`):
+
+  | target | method | D_orig/α | D_new/α | D_all/α | KL×1e3 | ‖δ‖ |
+  |---|---|---|---|---|---|---|
+  | active | decoder (= weight-only rescaled) | 0.583 | 0.311 | 0.656 | 5.32 | 21.6 |
+  | active | encoder row | 0.681 | 0.366 | 0.778 | 1.03 | 11.8 |
+  | active | LN (`J_E P`) | ≈0 | 0.114 | 0.114 | 0.96 | 12.7 |
+  | active | mean-only control | 6.53 | 52.1 | 52.5 | ≈0 | 9.04 |
+  | inactive | decoder | 0.583 | 0.361 | 0.716 | 3.41 | 36.9 |
+  | inactive | rescaled (weight-only; target err 0.727) | 0.342 | 0.112 | 0.37 | 0.65 | 22.5 |
+  | inactive | LN (`J_E P`) | ≈0 | 0.295 | 0.295 | 1.16 | 22.5 |
+
+- **Paired differences (LN − decoder, per document, bootstrap over documents).**
+  - Active targets:
+    - ΔD_all is between −0.50 and −0.54 at every dose;
+    - ΔD_new = −0.17 [−0.20, −0.14] at q99;
+    - ΔKL < 0 at every dose.
+  - Inactive targets:
+    - ΔD_all < 0 at every dose;
+    - the ΔD_new intervals include 0 at q50 and q90.
+- **Equal norm (ρ = 10.2), active targets, target gain.**
+  - decoder 0.895; encoder row 1.50; LN 1.35;
+  - **mean-only 1.85, with KL ≈ 1e-17.**
+- **Reading.**
+  - Internally, in this sparse regime, the correction lowers drift without raising newly
+    activated drift. That is the opposite of the dense toy and consistent with the
+    exploratory sparse toy.
+  - Lower KL at a matched internal target is ambiguous: it could mean a cleaner edit or an
+    edit along directions the model is less sensitive to.
+  - Nothing here is external evidence, and R3 remains NOT_RUN.
+  - G1–G3 are descriptive, all "continue side", and are not gate decisions.

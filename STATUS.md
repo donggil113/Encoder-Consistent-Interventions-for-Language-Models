@@ -34,7 +34,32 @@ Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
     HF-shortcut conventions give SAE readouts that differ by 51–114% of the edit's effect.
 - **Mean-only diagnostic control.** A real-model instance of internal change with no
   external effect: model KL ≤ 1.3e-15, while the SAE moves by a drift/ρ of 125 (median).
-- **REAL-01R pilot.** See the pilot section below.
+- **REAL-01R pilot: RAN.** Config `configs/p3_real01r_pilot.json`, frozen before the test
+  run.
+  - Setup: float64; 8 features, a seeded subsample of 64 calibration features; 54 test
+    documents; 6144 rows (272 INFEASIBLE, all random-direction target matching, kept);
+    run 1042 s.
+  - Target-matched, q99, active targets: decoder total drift 0.656α; LN (`J_E P`) 0.114α.
+    Per-document paired ΔD_all = −0.50 [−0.58, −0.42] (bootstrap over documents),
+    ΔD_new = −0.17, ΔKL = −0.0038 nats. The LN edit norm is 12.7, against 21.6 for the
+    decoder.
+  - Against the encoder row, LN has lower drift and nearly the same KL.
+  - At equal norm, the mean-only control has the highest target gain (1.85) with model KL of
+    about 0. Internal target efficiency is therefore not evidence of external effect.
+  - G1–G3 read "continue side" but are descriptive only (pilot).
+  - The real SAE (L0 ≈ 72 of d = 768) behaves like the toy's sparse regime, not the dense
+    one. This is consistent with the toy, but not a test of it.
+- **Manuscript v2.** `paper/main.tex` is restructured as coordinate validity → fidelity →
+  redistribution → external evaluation. **COMPILE_NOT_RUN** (no LaTeX). Static checks
+  pass. Three TODOs remain: REAL-01R-FULL, REAL-02 (lexical proxy) and REAL-02-SEM
+  (semantic).
+- **Deviations recorded.**
+  - Contract v2 (float64) was designed after the v1 failure; tolerances were unchanged.
+  - The smoke-stage cost projection double-counted fixed costs, so the pre-registered
+    N = 8 was kept on a corrected estimate.
+  - The gate min-unit rule (≥ 10 documents) and the target-gain metric were added during
+    the run, before results were read.
+  - A contract-stage window-batching bug was fixed before the stage passed.
 - **REAL-02.** NOT_RUN. The wedding keyword metric is a lexical proxy only; semantic
   success is NOT_RUN (no independent semantic evaluation).
 
@@ -54,7 +79,11 @@ Last updated: 2026-09-27 (third session). Branch: `claude/magical-bell-8vyrpd`.
 | H_MAIN / R1–R3 | **NOT_RUN** |
 | New-method claim | **Not made.** The prior evidence is against it: SAE-TS pseudo-inverse, Cui et al., toy TX. |
 
-**Next decision experiment:** `P3-REAL-01R` (§7 below). **Needs approval** for:
+**Next decision experiment (third session):** the `P3-REAL-02` lexical-proxy pilot, with a
+mean-only negative control and the semantic evaluation still NOT_RUN. It asks the first
+external question the internal pilot cannot answer. The earlier text below is kept.
+
+**Next decision experiment (second session, superseded):** `P3-REAL-01R` (§7 below). **Needs approval** for:
 - installing Python packages: torch (CPU), transformers, safetensors, huggingface_hub,
   pyarrow;
 - downloads of 703,545,978 bytes listed in the contract (GPT-2 files 550,959,861 B, SAE L8

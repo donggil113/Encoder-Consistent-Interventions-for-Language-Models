@@ -24,7 +24,9 @@ from .lexicon import count_hits, label
 from .real01r import capped_windows, last_status, load_documents, need_torch, record
 from .stats import cluster_bootstrap, paired_unit_differences, per_unit_means
 
-METHODS = ("no_edit", "decoder", "encoder_grad", "jacobian_ln", "diffmean", "random")
+# Directions are projected onto admissible edits (P = I - 11^T/d; contract execution K9).
+# mean_only is a negative control: invisible to the model, so it must not change behaviour.
+METHODS = ("no_edit", "decoder", "encoder_grad", "jacobian_ln", "diffmean", "random", "mean_only")
 
 
 def _prompts(be, docs, lex, per_doc: int = 4, prompt_len: int = 32):
@@ -47,10 +49,13 @@ def _deltas(be, method, x, rho, j, vecs):
     if method == "jacobian_ln":
         rows = []
         for t in range(T):
-            u = be.jacobian_ln(x[t], j, 1.0)["delta"]
+            u = be.jacobian_ln(x[t], j, 1.0)["delta"]  # solves with J_E P, so u is admissible
             rows.append(rho * u / u.norm())
         return torch.stack(rows)
-    u = vecs[method]
+    if method == "mean_only":
+        u = torch.ones(d, dtype=x.dtype)
+    else:
+        u = be.proj(vecs[method])
     return (rho * u / u.norm()).expand(T, d)
 
 
@@ -91,7 +96,7 @@ def stage_calibrate(args, cfg, contract):
     import torch
     from .backend import Backend
 
-    be = Backend(contract, args.cache_dir, args.allow_download, 2)
+    be = Backend(contract, args.cache_dir, args.allow_download, 2, "float64")
     lex = cfg["task"]["lexicon"]
     docs = [d for d in load_documents(contract, args.cache_dir, args.allow_download) if d.split == "calibration"]
     D.tokenize_documents(docs, be.tokenize, be.bos_id)
@@ -159,7 +164,7 @@ def stage_run(args, cfg, contract):
     from .backend import Backend
 
     fz = Q.load_frozen(os.path.join(args.out, "calibration_frozen.json"), cal["calibration_sha256"])
-    be = Backend(contract, args.cache_dir, args.allow_download, 2)
+    be = Backend(contract, args.cache_dir, args.allow_download, 2, "float64")
     lex = cfg["task"]["lexicon"]
     docs = load_documents(contract, args.cache_dir, args.allow_download)
     test = sorted((d for d in docs if d.split == "test"), key=lambda d: d.doc_id)
