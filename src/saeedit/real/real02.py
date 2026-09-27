@@ -175,7 +175,8 @@ def stage_calibrate(args, cfg, contract):
     n_hit = n_no = w_hit = w_no = 0
     norms: List[float] = []
     for d in docs:
-        for wi in capped_windows(d, cc["windows_per_doc_cap"]):
+        cap = cc["windows_per_doc_cap"]
+        for wi in (range(len(d.windows)) if cap is None else capped_windows(d, cap)):
             w = d.windows[wi]
             x = be.center(be.hook_states(torch.tensor([w]))[0])[1:]
             a = be.act(be.sae_pre(x))[0].double()
@@ -186,7 +187,8 @@ def stage_calibrate(args, cfg, contract):
                 s_no += a.sum(0); x_no += x.double().sum(0); n_no += x.shape[0]; w_no += 1
     t_scan = time.time() - t0
     if w_hit < cc["min_hit_windows"]:
-        record(args.out, "calibrate", "BLOCKED", t0, reason=f"only {w_hit} calibration windows with lexicon hits")
+        record(args.out, "calibrate", "BLOCKED", t0, reason=f"only {w_hit} calibration windows with lexicon hits",
+               config_id=cfg["config_id"], n_nohit_windows=w_no)
         return
     diff = s_hit / n_hit - s_no / n_no
     top = torch.topk(diff, 5)
@@ -238,7 +240,7 @@ def stage_calibrate(args, cfg, contract):
               "test_documents_read": False}
     os.makedirs(args.out, exist_ok=True)
     sha = Q.freeze(frozen, os.path.join(args.out, "calibration_frozen.json"))
-    record(args.out, "calibrate", "RAN", t0, calibration_sha256=sha, feature=j, chosen_budget=chosen,
+    record(args.out, "calibrate", "RAN", t0, config_id=cfg["config_id"], calibration_sha256=sha, feature=j, chosen_budget=chosen,
            n_hit_windows=w_hit, n_test_docs=frozen["n_test_docs"], seconds_scan=t_scan, seconds_kl_sweep=t_kl,
            seconds_cost_probe=time.time() - t2, threads=cfg["budget"]["threads"])
 
@@ -315,7 +317,7 @@ def stage_run(args, cfg, contract):
         w = csv.DictWriter(f, fieldnames=sorted({k for r in rows for k in r}), restval="")
         w.writeheader()
         w.writerows(rows)
-    record(args.out, "run", "RAN", t0, raw=path, n_rows=len(rows), feature=j, n_test_docs=len(prompts),
+    record(args.out, "run", "RAN", t0, config_id=cfg["config_id"], raw=path, n_rows=len(rows), feature=j, n_test_docs=len(prompts),
            test_doc_ids=[di for di, _ in prompts], threads=cfg["budget"]["threads"])
 
 

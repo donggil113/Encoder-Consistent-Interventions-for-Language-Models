@@ -1,0 +1,142 @@
+{
+  "config_id": "p3_real02_lx_v1_1",
+  "experiment_id": "P3-REAL-02-LX",
+  "frozen_before_run": true,
+  "frozen_note": "Amendment v1.1, written and committed after the v1 calibrate stage returned BLOCKED (only 5 calibration windows with lexicon hits under windows_per_doc_cap = 8; results/real02_lx/stage_status.json, first calibrate entry) and before any test document was read. v1 (configs/p3_real02_lx.json) and its BLOCKED record are kept unchanged.",
+  "contract": "configs/p3_contract_gpt2_res_jb_l8.json",
+  "assets": "already-downloaded pinned model/SAE/WikiText files only (HF_HUB_OFFLINE=1); no new download, no feature sweep",
+  "task": {
+    "name": "wedding-lexicon occurrence (lexical proxy)",
+    "metric_name": "wedding-lexicon occurrence",
+    "lexicon": [
+      "wedding",
+      "weddings",
+      "wed",
+      "marry",
+      "married",
+      "marriage",
+      "bride",
+      "groom",
+      "honeymoon"
+    ],
+    "lexicon_source": "Turner et al., Activation Addition (arXiv:2308.10248), App. H keyword list",
+    "label": "computed on the generated continuation only (prompt excluded): any_hit = at least one lexicon word; hits_per_generated_token = lexicon words / new_tokens; hits per word also recorded",
+    "lexicon_used_in_selection": "yes: the SAE feature and the DiffMean direction are chosen on calibration windows split by lexicon hits, so the metric is not independent of direction selection",
+    "label_scope": "lexical proxy only; semantic topic success is NOT_RUN (P3-REAL-02-SEM)"
+  },
+  "data": {
+    "calibration_documents": "WikiText-103 validation articles (contract revision)",
+    "test_documents": "WikiText-103 test articles",
+    "prompt_len": 32,
+    "prompt_rule": "window (BOS + 127 tokens) whose decoded text has zero lexicon hits, chosen with seeded_rng('prompts', doc_id); prompt = BOS + first 31 tokens",
+    "independent_unit": "test document (one prompt per document)"
+  },
+  "calibration_only_choices": {
+    "windows_per_doc_cap": null,
+    "feature": "argmax over SAE features of mean activation on tokens of calibration windows with >= 1 lexicon hit minus mean on windows with 0 hits; top-5 recorded, not used",
+    "min_hit_windows": 20,
+    "if_fewer_hit_windows": "BLOCKED",
+    "diffmean_vector": "mean centred hook state over tokens of hit windows minus mean over tokens of no-hit windows (calibration); projected by P before use",
+    "norm_budget_multipliers": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.8
+    ],
+    "norm_budget_reference": "median L2 norm of centred non-BOS calibration hook states",
+    "n_calibration_prompts": 32,
+    "calibration_prompts_per_doc": 4,
+    "kappa_nats": 0.1,
+    "matched_quality_rule": "for each ranked method, the largest budget whose mean over calibration prompts of KL(P_base || P_edit) (teacher forced on the prompt, averaged over prompt positions, edit at every position) is <= kappa; if no budget satisfies it the method is NOT_RUN_NO_BUDGET_WITHIN_KAPPA (no substitution)"
+  },
+  "methods": {
+    "reference": "no_edit",
+    "ranked": [
+      "decoder",
+      "encoder_grad",
+      "jacobian_ln",
+      "diffmean"
+    ],
+    "definitions": {
+      "decoder": "rho * P W_dec[j] / ||P W_dec[j]|| at every position",
+      "encoder_grad": "rho * P W_enc[:, j] / ||P W_enc[:, j]|| at every position",
+      "jacobian_ln": "per position t: least-norm solution of (M_t P) u = e_1 (M_t = encoder rows of j and of the non-target features active at t), u in range(P), scaled to norm rho",
+      "diffmean": "rho * P v / ||P v|| (calibration DiffMean)"
+    },
+    "control": {
+      "name": "mean_only",
+      "definition": "rho_max * 1/sqrt(d) at every position, rho_max = largest norm budget; fixed amplitude, never budget-matched, never ranked",
+      "expected": "identical logits and continuation to no_edit up to floating point (P 1 = 0; GPT-2 residual readers are LayerNorms)"
+    },
+    "not_run": {
+      "random": "not in the LX baseline list (reduces cost); NOT_RUN",
+      "SAE-TS": "NOT_RUN (needs a fitted effect model)",
+      "FGAA": "NOT_RUN (needs a fitted effect model)"
+    }
+  },
+  "generation": {
+    "new_tokens": 32,
+    "decoding": "greedy argmax (temperature 0, no top-p, no sampling, no RNG)",
+    "edit_span": "every position, prompt (including BOS) and generated",
+    "kv_cache": "none (one forward per generated token)"
+  },
+  "test": {
+    "doc_order_seed": "p3-real02-lx-docs",
+    "doc_rule": "test documents sorted by doc_id, shuffled with seeded_rng(doc_order_seed); the first n_test_docs with at least one zero-hit window",
+    "n_docs_options": [
+      32,
+      24,
+      16,
+      8
+    ],
+    "evaluate": "no_edit once; each ranked method at its calibration-selected budget only; mean_only control at rho_max"
+  },
+  "metrics": {
+    "behaviour": [
+      "any_hit (>= 1 lexicon word)",
+      "hits_per_generated_token"
+    ],
+    "quality": [
+      "KL(P_base || P_edit) teacher forced on the common prompt, averaged over prompt positions",
+      "NLL of the generated continuation under the unedited model (fluency proxy)"
+    ],
+    "internal": [
+      "canonical SAE readout E(x + P delta) - E(x) at non-BOS prompt positions: mean target change, mean non-target L2 drift, mean newly active count; never used as the label"
+    ],
+    "edit": [
+      "median per-position edit norm",
+      "max |mean component| of the edit"
+    ],
+    "cost": [
+      "seconds per generation and per row",
+      "stage wall seconds",
+      "threads"
+    ]
+  },
+  "primary_comparison": "per test document at the calibration-selected budgets: any_hit and hits_per_generated_token differences jacobian_ln - decoder, jacobian_ln - diffmean, jacobian_ln - encoder_grad, decoder - diffmean, and each method - no_edit; mean over documents with document-bootstrap 95% percentile intervals (2000 resamples, seed 0)",
+  "interpretation_rule": "The method claim is supported only if jacobian_ln exceeds decoder, encoder_grad and diffmean on held-out wedding-lexicon occurrence at calibration-matched KL with intervals excluding 0. Anything else is reported as not supported. An interval containing 0 is not evidence of equivalence. Lower internal drift or lower KL alone never establishes superiority.",
+  "budget": {
+    "threads": 2,
+    "run_wall_clock_minutes_max": 30,
+    "reduction_rule": "the calibrate stage times 2 no_edit and 2 jacobian_ln generations on calibration prompts and sets n_test_docs to the largest option whose projected run time fits; if none fits, the run stage is NOT_RUN"
+  },
+  "cli": "HF_HOME=<cache> HF_HUB_OFFLINE=1 PYTHONPATH=src <venv>/bin/python -m saeedit.real.real02 <calibrate|run|summarize> --config configs/p3_real02_lx_v1_1.json --out results/real02_lx",
+  "deviations_from_p3_real02_v2": [
+    "one prompt per test document and at most 32 test documents (v2: up to 4 prompts per document, all documents)",
+    "test generations only at each method's calibration-selected budget (v2: every budget)",
+    "random direction NOT_RUN (not in the LX baseline list)",
+    "mean_only at one fixed amplitude as a control outside the ranking (v2 put it through the budget sweep)",
+    "internal canonical readout added (v2: not implemented)",
+    "token-normalised lexicon frequency added next to any-hit",
+    "LN per-position directions cached across generation steps (same values as recomputation, causal hook states)",
+    "calibration prompt count and per-document cap written into the config (v2 had them in code: 32 prompts, 4 per document)"
+  ],
+  "amendment_v1_1": {
+    "changed": "calibration_only_choices.windows_per_doc_cap: 8 -> null (every calibration window is scanned for feature choice, DiffMean and the norm reference)",
+    "unchanged": "min_hit_windows = 20 and every other field, including kappa, budgets, prompts, methods, generation, test rule and interpretation rule",
+    "information_used": "only the v1 calibration count (5 hit windows); no test document, no test output; the uncapped count was not inspected before this file was committed",
+    "single_shot_rule": "this is the only amendment: if v1.1 calibrate is BLOCKED again, P3-REAL-02-LX is BLOCKED and no further change is made",
+    "label": "calibration-stage amendment after a BLOCKED stage (not pre-registered in v1)"
+  }
+}

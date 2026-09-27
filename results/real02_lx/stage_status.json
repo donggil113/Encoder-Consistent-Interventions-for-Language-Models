@@ -1,0 +1,10 @@
+[
+  {
+    "stage": "calibrate",
+    "status": "BLOCKED",
+    "seconds": 158.407,
+    "peak_rss_kb": 2024928,
+    "unix_time": 1790487086.6130228,
+    "reason": "only 5 calibration windows with lexicon hits"
+  }
+]
