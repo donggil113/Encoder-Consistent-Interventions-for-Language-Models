@@ -1,0 +1,780 @@
+{
+  "primary": {
+    "a": "jacobian_ln",
+    "b": "decoder",
+    "metric": "success",
+    "estimand": "mean over test documents of [any_hit(LN) - any_hit(decoder)] at each method's calibration-selected budget, 32 greedy tokens, one prompt per document",
+    "unit": "test document",
+    "interval": "document bootstrap percentile 95% (2000 resamples, seed 0); discordant counts reported",
+    "multiplicity": "one confirmatory comparison; every other comparison and metric is secondary and descriptive, with no multiplicity claim",
+    "n_docs": 32,
+    "mean_difference": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "discordant": {
+      "both_hit": 1,
+      "a_only": 0,
+      "b_only": 0,
+      "neither": 31
+    },
+    "verdict": "NOT_SUPPORTED (interval includes 0; not equivalence)"
+  },
+  "row_status_counts": {
+    "no_edit": {
+      "OK": 32
+    },
+    "decoder": {
+      "OK": 32
+    },
+    "encoder_grad": {
+      "OK": 32
+    },
+    "jacobian_ln": {
+      "OK": 32
+    },
+    "diffmean": {
+      "OK": 32
+    },
+    "mean_only": {
+      "OK": 32
+    }
+  },
+  "attempted_test_docs": {
+    "n": 32,
+    "skipped": []
+  },
+  "overlap": {
+    "test_docs_also_in_real01r_pilot": [
+      "test:174c77152576f6c0",
+      "test:360e2cb2dfdbe219",
+      "test:3e0157b1edcd0125",
+      "test:47726f51038b956b",
+      "test:4db380c0d221327b",
+      "test:5efb5138bb92ba4c",
+      "test:659e9256d60de113",
+      "test:7238106a1b1a6dad",
+      "test:7532b9906d6a5e9a",
+      "test:7ed714b3dd307a73",
+      "test:80ca63c824efbbb0",
+      "test:851d3ea379a11191",
+      "test:86764e345664bea4",
+      "test:931d32f1d57640fb",
+      "test:975a81a112453253",
+      "test:9880810cb2ebc332",
+      "test:9a50e01cae39425c",
+      "test:9c2dda8efb89180c",
+      "test:aedfe98c3cffbebf",
+      "test:b17acc1224fd99d3",
+      "test:b6626494bd663bdd",
+      "test:b7098dfe72b9da39",
+      "test:c47f3338ce69a81c",
+      "test:d69768ef34abee31",
+      "test:e7686b3c5b7055f1",
+      "test:f21a9788b41c6b11",
+      "test:f24f9cf5d5653025",
+      "test:fa6102c9dd98ba1d"
+    ],
+    "test_docs_in_calibration_ids": []
+  },
+  "per_method_at_selected_budget": {
+    "no_edit": {
+      "n_docs": 32,
+      "any_hit_rate": {
+        "n_units": 32,
+        "estimate": 0.03125,
+        "lo": 0.0,
+        "hi": 0.09375,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "hits_per_generated_token": {
+        "n_units": 32,
+        "estimate": 0.0009765625,
+        "lo": 0.0,
+        "hi": 0.0029296875,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "kl_prompt_teacher_forced": {
+        "n_units": 32,
+        "estimate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "continuation_nll_unedited_model": {
+        "n_units": 32,
+        "estimate": 1.3165339081729877,
+        "lo": 1.0065557978089539,
+        "hi": 1.4591398262753543,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "target_change_mean": {
+        "n_units": 32,
+        "estimate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "drift_all_nontarget_mean": {
+        "n_units": 32,
+        "estimate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "edit_norm_per_position_median": {
+        "n_units": 32,
+        "estimate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      }
+    },
+    "decoder": {
+      "n_docs": 32,
+      "any_hit_rate": {
+        "n_units": 32,
+        "estimate": 0.03125,
+        "lo": 0.0,
+        "hi": 0.09375,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "hits_per_generated_token": {
+        "n_units": 32,
+        "estimate": 0.0009765625,
+        "lo": 0.0,
+        "hi": 0.0029296875,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "kl_prompt_teacher_forced": {
+        "n_units": 32,
+        "estimate": 0.028129883792693718,
+        "lo": 0.024924890188683102,
+        "hi": 0.030559363085190736,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "continuation_nll_unedited_model": {
+        "n_units": 32,
+        "estimate": 1.2039805490757658,
+        "lo": 1.020433289939073,
+        "hi": 1.5371965943017272,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "target_change_mean": {
+        "n_units": 32,
+        "estimate": 1.7331842232404053,
+        "lo": 1.3821484933872057,
+        "hi": 2.190727758067481,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "drift_all_nontarget_mean": {
+        "n_units": 32,
+        "estimate": 3.6459290042242447,
+        "lo": 3.5272147747040563,
+        "hi": 3.8065558386963394,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "edit_norm_per_position_median": {
+        "n_units": 32,
+        "estimate": 10.156868323228968,
+        "lo": 10.156868323228968,
+        "hi": 10.156868323228968,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      }
+    },
+    "encoder_grad": {
+      "n_docs": 32,
+      "any_hit_rate": {
+        "n_units": 32,
+        "estimate": 0.03125,
+        "lo": 0.0,
+        "hi": 0.09375,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "hits_per_generated_token": {
+        "n_units": 32,
+        "estimate": 0.0009765625,
+        "lo": 0.0,
+        "hi": 0.0029296875,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "kl_prompt_teacher_forced": {
+        "n_units": 32,
+        "estimate": 0.026854610459598666,
+        "lo": 0.024296236350447368,
+        "hi": 0.031118489013409648,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "continuation_nll_unedited_model": {
+        "n_units": 32,
+        "estimate": 1.2721007607498729,
+        "lo": 1.0224206014333668,
+        "hi": 1.4719634997866085,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "target_change_mean": {
+        "n_units": 32,
+        "estimate": 3.9228130216486745,
+        "lo": 3.4820436918654165,
+        "hi": 4.473440110750632,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "drift_all_nontarget_mean": {
+        "n_units": 32,
+        "estimate": 9.165911233286248,
+        "lo": 9.044604648019764,
+        "hi": 9.523574244086397,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "edit_norm_per_position_median": {
+        "n_units": 32,
+        "estimate": 10.156868323228965,
+        "lo": 10.156868323228965,
+        "hi": 10.156868323228965,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      }
+    },
+    "jacobian_ln": {
+      "n_docs": 32,
+      "any_hit_rate": {
+        "n_units": 32,
+        "estimate": 0.03125,
+        "lo": 0.0,
+        "hi": 0.09375,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "hits_per_generated_token": {
+        "n_units": 32,
+        "estimate": 0.0009765625,
+        "lo": 0.0,
+        "hi": 0.0029296875,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "kl_prompt_teacher_forced": {
+        "n_units": 32,
+        "estimate": 0.0205494591664333,
+        "lo": 0.019014389065849985,
+        "hi": 0.02147579277958893,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "continuation_nll_unedited_model": {
+        "n_units": 32,
+        "estimate": 1.3686469443118972,
+        "lo": 1.01981484357931,
+        "hi": 1.5375309033422915,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "target_change_mean": {
+        "n_units": 32,
+        "estimate": 2.985261083977388,
+        "lo": 2.5235677145881454,
+        "hi": 3.4510932120972173,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "drift_all_nontarget_mean": {
+        "n_units": 32,
+        "estimate": 1.6846915301364973,
+        "lo": 1.5887563250994723,
+        "hi": 1.767049186901704,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "edit_norm_per_position_median": {
+        "n_units": 32,
+        "estimate": 10.156868323228968,
+        "lo": 10.156868323228968,
+        "hi": 10.156868323228968,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      }
+    },
+    "diffmean": {
+      "n_docs": 32,
+      "any_hit_rate": {
+        "n_units": 32,
+        "estimate": 0.0625,
+        "lo": 0.0,
+        "hi": 0.15625,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "hits_per_generated_token": {
+        "n_units": 32,
+        "estimate": 0.00390625,
+        "lo": 0.0,
+        "hi": 0.009765625,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "kl_prompt_teacher_forced": {
+        "n_units": 32,
+        "estimate": 0.048741500117790965,
+        "lo": 0.04184173022424099,
+        "hi": 0.05688225216997695,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "continuation_nll_unedited_model": {
+        "n_units": 32,
+        "estimate": 1.341909043863814,
+        "lo": 1.1820564321781637,
+        "hi": 1.590569796537495,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "target_change_mean": {
+        "n_units": 32,
+        "estimate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "drift_all_nontarget_mean": {
+        "n_units": 32,
+        "estimate": 3.564621522312204,
+        "lo": 3.4082255275383324,
+        "hi": 3.656548754109419,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "edit_norm_per_position_median": {
+        "n_units": 32,
+        "estimate": 10.156868323228966,
+        "lo": 10.156868323228966,
+        "hi": 10.156868323228966,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      }
+    },
+    "mean_only": {
+      "n_docs": 32,
+      "any_hit_rate": {
+        "n_units": 32,
+        "estimate": 0.03125,
+        "lo": 0.0,
+        "hi": 0.09375,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "hits_per_generated_token": {
+        "n_units": 32,
+        "estimate": 0.0009765625,
+        "lo": 0.0,
+        "hi": 0.0029296875,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "kl_prompt_teacher_forced": {
+        "n_units": 32,
+        "estimate": 1.507854982060123e-17,
+        "lo": -1.5935849930195598e-17,
+        "hi": 2.397777794138463e-17,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "continuation_nll_unedited_model": {
+        "n_units": 32,
+        "estimate": 1.3165339081729877,
+        "lo": 1.0065557978089539,
+        "hi": 1.4591398262753543,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "target_change_mean": {
+        "n_units": 32,
+        "estimate": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "drift_all_nontarget_mean": {
+        "n_units": 32,
+        "estimate": 1.3784901139049912e-13,
+        "lo": 1.352752522764842e-13,
+        "hi": 1.399724940948314e-13,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      },
+      "edit_norm_per_position_median": {
+        "n_units": 32,
+        "estimate": 81.25494658583195,
+        "lo": 81.25494658583195,
+        "hi": 81.25494658583195,
+        "n_boot": 2000,
+        "seed": 0,
+        "level": 0.95
+      }
+    }
+  },
+  "paired": {
+    "jacobian_ln-decoder|success": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-decoder|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-decoder|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": -0.009423457916256496,
+      "lo": -0.011544428284182801,
+      "hi": -0.007349440468943513,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-decoder|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": 0.03948650113777051,
+      "lo": -0.05952308508257277,
+      "hi": 0.15051660831405683,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-diffmean|success": {
+      "n_units": 32,
+      "estimate": -0.03125,
+      "lo": -0.12578124999999862,
+      "hi": 0.0625,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-diffmean|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": -0.0029296875,
+      "lo": -0.009765625,
+      "hi": 0.001953125,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-diffmean|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": -0.028346179698839746,
+      "lo": -0.0331251411955446,
+      "hi": -0.023450827914564,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-diffmean|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": -0.04485868798215636,
+      "lo": -0.21039568371211692,
+      "hi": 0.1196526371741883,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-encoder_grad|success": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-encoder_grad|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-encoder_grad|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": -0.008691993556063158,
+      "lo": -0.010548465424583858,
+      "hi": -0.006920030147814657,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-encoder_grad|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": 0.022522706991980466,
+      "lo": -0.0705895837546961,
+      "hi": 0.12835391830582152,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-diffmean|success": {
+      "n_units": 32,
+      "estimate": -0.03125,
+      "lo": -0.12578124999999862,
+      "hi": 0.0625,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-diffmean|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": -0.0029296875,
+      "lo": -0.009765625,
+      "hi": 0.001953125,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-diffmean|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": -0.01892272178258325,
+      "lo": -0.024165584200921714,
+      "hi": -0.013623612602467004,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-diffmean|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": -0.08434518911992686,
+      "lo": -0.2326069981149392,
+      "hi": 0.05288177147294376,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-no_edit|success": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-no_edit|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-no_edit|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": 0.029548113487647625,
+      "lo": 0.027120384808749485,
+      "hi": 0.03216326201111697,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "decoder-no_edit|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": -0.002187605547129247,
+      "lo": -0.10662203822576208,
+      "hi": 0.09797009311713042,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "encoder_grad-no_edit|success": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "encoder_grad-no_edit|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "encoder_grad-no_edit|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": 0.02881664912745428,
+      "lo": 0.026392127249817897,
+      "hi": 0.031164736031730877,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "encoder_grad-no_edit|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": 0.014776188598660783,
+      "lo": -0.07836511090055218,
+      "hi": 0.11940562393593421,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-no_edit|success": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-no_edit|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-no_edit|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": 0.020124655571391124,
+      "lo": 0.01913508496122972,
+      "hi": 0.02110732569186895,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "jacobian_ln-no_edit|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": 0.037298895590641264,
+      "lo": -0.08654106014998107,
+      "hi": 0.17495705638075537,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "diffmean-no_edit|success": {
+      "n_units": 32,
+      "estimate": 0.03125,
+      "lo": -0.0625,
+      "hi": 0.12578124999999574,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "diffmean-no_edit|hits_per_generated_token": {
+      "n_units": 32,
+      "estimate": 0.0029296875,
+      "lo": -0.001953125,
+      "hi": 0.009765625,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "diffmean-no_edit|kl_prompt_teacher_forced": {
+      "n_units": 32,
+      "estimate": 0.04847083527023088,
+      "lo": 0.043158052156092655,
+      "hi": 0.05366381476123425,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    },
+    "diffmean-no_edit|continuation_nll_unedited_model": {
+      "n_units": 32,
+      "estimate": 0.08215758357279762,
+      "lo": -0.0629254162074827,
+      "hi": 0.22562418920978555,
+      "n_boot": 2000,
+      "seed": 0,
+      "level": 0.95
+    }
+  },
+  "control_mean_only": {
+    "n": 32,
+    "identical_continuation_to_no_edit": 32,
+    "max_kl": 1.23156551143222e-16
+  },
+  "interpretation_rule": "LN is reported better than decoder on space-lexicon occurrence only if the primary interval lies above 0. An interval that includes 0 is 'not supported', never equivalence. Sparse events give wide intervals and are reported as they are; no change of seed, length, budget, test set or threshold after the run. Lower internal drift or lower KL never establishes superiority; no semantic claim.",
+  "note": "unit = test document (one prompt each); statistic = mean over documents; intervals are document-bootstrap percentiles (2000, seed 0); only the primary comparison is confirmatory; an interval that includes 0 is not evidence of equivalence"
+}

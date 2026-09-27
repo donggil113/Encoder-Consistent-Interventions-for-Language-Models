@@ -1,0 +1,97 @@
+{
+ "label": "POST_HOC_DESCRIPTIVE (computed after the frozen summary; not part of the confirmatory analysis)",
+ "per_method": {
+  "decoder": {
+   "n_docs": 32,
+   "continuation_differs_from_no_edit": 26,
+   "first_divergent_token_median": 4
+  },
+  "encoder_grad": {
+   "n_docs": 32,
+   "continuation_differs_from_no_edit": 24,
+   "first_divergent_token_median": 2
+  },
+  "jacobian_ln": {
+   "n_docs": 32,
+   "continuation_differs_from_no_edit": 26,
+   "first_divergent_token_median": 4
+  },
+  "diffmean": {
+   "n_docs": 32,
+   "continuation_differs_from_no_edit": 31,
+   "first_divergent_token_median": 2
+  },
+  "mean_only": {
+   "n_docs": 32,
+   "continuation_differs_from_no_edit": 0,
+   "first_divergent_token_median": null
+  }
+ },
+ "primary_discordant_pairs": 0,
+ "clopper_pearson_95_upper_on_discordance_rate_0_of_32": 0.10888116067935294,
+ "docs_with_hit": {
+  "no_edit": [
+   "test:c47f3338ce69a81c"
+  ],
+  "decoder": [
+   "test:c47f3338ce69a81c"
+  ],
+  "encoder_grad": [
+   "test:c47f3338ce69a81c"
+  ],
+  "jacobian_ln": [
+   "test:c47f3338ce69a81c"
+  ],
+  "diffmean": [
+   "test:3e0157b1edcd0125",
+   "test:86764e345664bea4"
+  ],
+  "mean_only": [
+   "test:c47f3338ce69a81c"
+  ]
+ },
+ "hit_texts": [
+  {
+   "method": "diffmean",
+   "doc_id": "test:86764e345664bea4",
+   "hits": "2",
+   "continuation": " by Anonymous<|endoftext|>The first time I saw the new Star Wars movie, I was so excited. I was so excited to see the new Star Wars movie. I"
+  },
+  {
+   "method": "no_edit",
+   "doc_id": "test:c47f3338ce69a81c",
+   "hits": "1",
+   "continuation": " since the All-Star break.\n\n) . Kershaw also became just the second lefthander to have a 240 @-@ plus strikeouts in"
+  },
+  {
+   "method": "decoder",
+   "doc_id": "test:c47f3338ce69a81c",
+   "hits": "1",
+   "continuation": " since the All-Star break.\n\n) . Kershaw also became just the second lefthander to have a 240 @-@ plus strikeouts in"
+  },
+  {
+   "method": "encoder_grad",
+   "doc_id": "test:c47f3338ce69a81c",
+   "hits": "1",
+   "continuation": " since the All-Star break.\n\n) . Kershaw also became just the second lefthander to have a 240 @-@ plus strikeouts in"
+  },
+  {
+   "method": "jacobian_ln",
+   "doc_id": "test:c47f3338ce69a81c",
+   "hits": "1",
+   "continuation": " since the All-Star break.\n\n) . Kershaw also became just the second lefthander to have a 240 @-@ plus strikeouts in"
+  },
+  {
+   "method": "mean_only",
+   "doc_id": "test:c47f3338ce69a81c",
+   "hits": "1",
+   "continuation": " since the All-Star break.\n\n) . Kershaw also became just the second lefthander to have a 240 @-@ plus strikeouts in"
+  },
+  {
+   "method": "diffmean",
+   "doc_id": "test:3e0157b1edcd0125",
+   "hits": "2",
+   "continuation": " which is a reference to the planet's water.\n\n. Clara chooses the word \" , which is a reference to the planet's water. The Doctor is"
+  }
+ ]
+}

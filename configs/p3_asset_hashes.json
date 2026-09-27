@@ -1,0 +1,96 @@
+{
+ "note": "sha256 of the pinned files as present in the local HF cache (computed locally, no download); derived record, the frozen contract config is unchanged",
+ "files": [
+  {
+   "repo": "dataset:Salesforce/wikitext",
+   "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+   "path": "wikitext-103-raw-v1/test-00000-of-00001.parquet",
+   "bytes": 732610,
+   "sha256": "5f1bea067869d04849c0f975a2b29c4ff47d867f484f5010ea5e861eab246d91"
+  },
+  {
+   "repo": "dataset:Salesforce/wikitext",
+   "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+   "path": "wikitext-103-raw-v1/validation-00000-of-00001.parquet",
+   "bytes": 657209,
+   "sha256": "204929b7ff9d6184953f867dedb860e40aa69c078fc1e54b3baaa8fb28511c4c"
+  },
+  {
+   "repo": "gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "config.json",
+   "bytes": 665,
+   "sha256": "0daed7749b4f02b8f76240d5444551d7b08712dab4d0adb8239c56ba823bb7b4"
+  },
+  {
+   "repo": "jbloom/GPT2-Small-SAEs-Reformatted",
+   "revision": "57d08a4fd333fbf18caf3fbea63ceeb88e2f50d9",
+   "path": "blocks.8.hook_resid_pre/cfg.json",
+   "bytes": 1274,
+   "sha256": "f8c690c02ea3e1a29713748dd3922404fe59310cafaab6e376b4526b5f69c12c"
+  },
+  {
+   "repo": "jbloom/GPT2-Small-SAEs-Reformatted",
+   "revision": "57d08a4fd333fbf18caf3fbea63ceeb88e2f50d9",
+   "path": "blocks.8.hook_resid_pre/sae_weights.safetensors",
+   "bytes": 151096640,
+   "sha256": "d46a41aa7a9e0475c135e41dde0cb3d8510528ce3140568a18a0e29d3a624d8b"
+  },
+  {
+   "repo": "jbloom/GPT2-Small-SAEs-Reformatted",
+   "revision": "57d08a4fd333fbf18caf3fbea63ceeb88e2f50d9",
+   "path": "blocks.8.hook_resid_pre/sparsity.safetensors",
+   "bytes": 98384,
+   "sha256": "e3fdd622817b0695ffc68d3965eb26beea6da21dcf8a02c02d4ac6d99e872458"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "config.json",
+   "bytes": 665,
+   "sha256": "0daed7749b4f02b8f76240d5444551d7b08712dab4d0adb8239c56ba823bb7b4"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "generation_config.json",
+   "bytes": 124,
+   "sha256": "ed0b32ac72c0f5f44a719abb2d7786ea5146c871f83717b7f2018065954de02b"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "merges.txt",
+   "bytes": 456318,
+   "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "model.safetensors",
+   "bytes": 548105171,
+   "sha256": "248dfc3911869ec493c76e65bf2fcf7f615828b0254c12b473182f0f81d3a707"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "tokenizer.json",
+   "bytes": 1355256,
+   "sha256": "8414cab924d8b9b33013f0d221c5862f365ee9be39c5c2bfae8a5a9e970478a6"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "tokenizer_config.json",
+   "bytes": 26,
+   "sha256": "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f"
+  },
+  {
+   "repo": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "path": "vocab.json",
+   "bytes": 1042301,
+   "sha256": "196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783"
+  }
+ ]
+}
