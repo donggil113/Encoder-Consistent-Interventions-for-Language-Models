@@ -1,0 +1,31 @@
+{
+ "source_repo": "https://github.com/uber-research/PPLM",
+ "commit": "e236b8989322128360182d29a79944627957ad47",
+ "commit_resolved_by": "git ls-remote https://github.com/uber-research/PPLM HEAD (= refs/heads/master) on 2026-09-27",
+ "files": {
+  "space.txt": {
+   "path_in_repo": "paper_code/wordlists/space.txt",
+   "url": "https://raw.githubusercontent.com/uber-research/PPLM/e236b8989322128360182d29a79944627957ad47/paper_code/wordlists/space.txt",
+   "bytes": 142,
+   "sha256": "de1a50a46f3f68b347f9c800cb8981865b85a94f83a15cea7c653067f4b82dc5",
+   "n_entries": 18
+  },
+  "LICENSE": {
+   "path_in_repo": "LICENSE",
+   "url": "https://raw.githubusercontent.com/uber-research/PPLM/e236b8989322128360182d29a79944627957ad47/LICENSE",
+   "bytes": 11357,
+   "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+   "license": "Apache License 2.0 (copied unmodified; required for redistribution of space.txt)"
+  }
+ },
+ "paper": {
+  "title": "Plug and Play Language Models: A Simple Approach to Controlled Text Generation",
+  "authors": "Dathathri, Madotto, Lan, Hung, Frank, Molino, Yosinski, Liu",
+  "arxiv": "1912.02164",
+  "venue_as_stated_on_arxiv_comments": "ICLR 2020 camera ready",
+  "metadata_source": "https://arxiv.org/abs/1912.02164 citation_* meta tags (page sha256 85b3b407...)"
+ },
+ "fetched": "2026-09-27 ~08:53 UTC; only these two small files and the arXiv abstract page; no weights, no corpus",
+ "use": "lexical target definition only (P3-REAL-02-SPACE); this is not a reproduction of the PPLM method",
+ "chosen_by": "user instruction (Round 5), not by searching for a topic with good results"
+}

@@ -13,7 +13,7 @@ from saeedit.real import contract as C
 from saeedit.real import data as D
 from saeedit.real import dose as Q
 from saeedit.real.drift import decompose
-from saeedit.real.lexicon import WEDDING_ACTADD, count_hits, label
+from saeedit.real.lexicon import WEDDING_ACTADD, bounded_hits, bounded_label, count_hits, label
 from saeedit.real.stats import cluster_bootstrap, paired_unit_differences, per_unit_means
 from saeedit.sae_toy import ToySAE, build_decoder, build_encoder, sparse_base_point
 
@@ -206,6 +206,19 @@ class TestStatsAndLexicon(unittest.TestCase):
         self.assertEqual(count_hits("The Bride and the groom were married; weddings!", WEDDING_ACTADD), 4)
         self.assertEqual(label("no match here", WEDDING_ACTADD)["success"], 0)
         self.assertEqual(count_hits("wedded bliss", WEDDING_ACTADD), 0)  # exact words only
+
+    def test_bounded_lexicon(self):
+        lex = ["space", "spacecraft", "earth", "star", "deep space"]
+        self.assertEqual(bounded_hits("Earth's orbit; space-time", lex), 2)       # possessive and hyphen are boundaries
+        self.assertEqual(bounded_hits("spacecrafts and stars", lex), 0)           # no inflection, no substring
+        self.assertEqual(bounded_hits("aerospace", lex), 0)                        # no substring inside a word
+        self.assertEqual(bounded_hits("space and more", lex, before="aero"), 0)   # leading fragment dropped
+        self.assertEqual(bounded_hits(" space and more", lex, before="aero"), 1)  # space-prefixed token: whole word
+        self.assertEqual(bounded_hits("to the star", lex, after="ship"), 0)       # trailing fragment dropped
+        self.assertEqual(bounded_hits("to the star", lex, after=" ship"), 1)
+        self.assertEqual(bounded_hits("into deep space now", lex), 1)             # multi-word entry counted once
+        lab = bounded_label(" a star", lex, before="the", n_tokens=4)
+        self.assertEqual((lab["hits"], lab["success"], lab["hits_per_generated_token"]), (1, 1, 0.25))
 
 
 if __name__ == "__main__":

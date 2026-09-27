@@ -1,9 +1,11 @@
-"""CLI for P3-REAL-02 / P3-REAL-02-LX (wedding-lexicon occurrence; label never uses the SAE).
+"""CLI for P3-REAL-02 / -LX / -SPACE (lexicon occurrence; the label never uses the SAE).
 
     HF_HOME=<cache> HF_HUB_OFFLINE=1 PYTHONPATH=src <venv>/bin/python -m saeedit.real.real02 <stage> \
-        --config configs/p3_real02_lx.json --out results/real02_lx
+        --config configs/p3_real02_space.json --out results/real02_space
 
-Stages: check-env, calibrate, run, summarize.
+Stages: check-env, support (text-only count, tokenizer only), calibrate, run, summarize.
+Configs without task.matching (the wedding LX records) keep the original word matching;
+task.matching = "bounded_v1" uses lexicon.bounded_hits with window/prompt edge fragments dropped.
 
 Actor edits are admissible (in range(P), P = I - 11^T/d): decoder, encoder-row and DiffMean
 directions are projected by P; the LN direction solves (M P) delta = e_1 and lies in
@@ -27,7 +29,7 @@ from typing import Dict, List
 from . import data as D
 from . import dose as Q
 from .contract import environment_status, load_contract
-from .lexicon import count_hits, label
+from .lexicon import bounded_hits, bounded_label, count_hits, label
 from .real01r import capped_windows, last_status, load_documents, need_torch, record
 from .stats import cluster_bootstrap, paired_unit_differences, per_unit_means
 
@@ -39,11 +41,31 @@ def _methods(cfg) -> List[str]:
     return list(cfg["methods"].get("ranked", ACTORS))
 
 
-def _prompts(be, docs, lex, per_doc: int = 4, prompt_len: int = 32):
+def _doc_tokens(be, d):
+    """Full token list of a document (windows are consecutive 127-token chunks of it)."""
+    if getattr(d, "tokens", None) is None:
+        d.tokens = be.tokenize(d.text)
+    return d.tokens
+
+
+def _window_hits(be, d, wi, lex, matching=None) -> int:
+    w = d.windows[wi]
+    text = be.tok.decode(w[1:])
+    if matching != "bounded_v1":
+        return count_hits(text, lex)
+    toks, body = _doc_tokens(be, d), len(w) - 1
+    start = sum(len(v) - 1 for v in d.windows[:wi])
+    assert toks[start:start + body] == w[1:], "window/token alignment"
+    before = be.tok.decode([toks[start - 1]]) if start > 0 else ""
+    after = be.tok.decode([toks[start + body]]) if start + body < len(toks) else ""
+    return bounded_hits(text, lex, before=before, after=after)
+
+
+def _prompts(be, docs, lex, per_doc: int = 4, prompt_len: int = 32, matching=None):
     """(doc_id, prompt ids) from windows with zero lexicon hits."""
     out = []
     for d in docs:
-        cands = [w for w in d.windows if count_hits(be.tok.decode(w[1:]), lex) == 0]
+        cands = [d.windows[wi] for wi in range(len(d.windows)) if _window_hits(be, d, wi, lex, matching) == 0]
         rng = D.seeded_rng("prompts", d.doc_id)
         for w in (rng.sample(cands, per_doc) if len(cands) > per_doc else cands):
             out.append((d.doc_id, w[:prompt_len]))
@@ -162,6 +184,10 @@ def stage_calibrate(args, cfg, contract):
     import torch
     from .backend import Backend
 
+    if cfg.get("support_stage_required") and last_status(args.out, "support").get("verdict") != "SUPPORTED":
+        record(args.out, "calibrate", "BLOCKED", t0, reason="support stage has not returned SUPPORTED",
+               config_id=cfg["config_id"])
+        return
     torch.manual_seed(0)
     be = Backend(contract, args.cache_dir, args.allow_download, cfg["budget"]["threads"], "float64")
     lex = cfg["task"]["lexicon"]
@@ -181,7 +207,7 @@ def stage_calibrate(args, cfg, contract):
             x = be.center(be.hook_states(torch.tensor([w]))[0])[1:]
             a = be.act(be.sae_pre(x))[0].double()
             norms.extend(x.norm(dim=-1).tolist())
-            if count_hits(be.tok.decode(w[1:]), lex) > 0:
+            if _window_hits(be, d, wi, lex, cfg["task"].get("matching")) > 0:
                 s_hit += a.sum(0); x_hit += x.double().sum(0); n_hit += x.shape[0]; w_hit += 1
             else:
                 s_no += a.sum(0); x_no += x.double().sum(0); n_no += x.shape[0]; w_no += 1
@@ -196,7 +222,8 @@ def stage_calibrate(args, cfg, contract):
     diffmean = x_hit / n_hit - x_no / n_no
     budgets = Q.norm_budgets(norms, cc["norm_budget_multipliers"])
     vecs = {"decoder": be.dec_row(j), "encoder_grad": be.enc_col(j), "diffmean": diffmean}
-    prompts = _prompts(be, docs, lex, cc["calibration_prompts_per_doc"], cfg["data"]["prompt_len"])[:cc["n_calibration_prompts"]]
+    prompts = _prompts(be, docs, lex, cc["calibration_prompts_per_doc"], cfg["data"]["prompt_len"],
+                       cfg["task"].get("matching"))[:cc["n_calibration_prompts"]]
     kappa = cc["kappa_nats"]
     chosen: Dict[str, object] = {}
     kl_table = defaultdict(dict)
@@ -270,9 +297,12 @@ def stage_run(args, cfg, contract):
         return
     D.seeded_rng(cfg["test"]["doc_order_seed"]).shuffle(test)
     D.tokenize_documents(test, be.tokenize, be.bos_id)
-    prompts = []
+    matching = cfg["task"].get("matching")
+    prompts, attempted = [], []
     for d in test:
-        p = _prompts(be, [d], lex, 1, cfg["data"]["prompt_len"])
+        p = _prompts(be, [d], lex, 1, cfg["data"]["prompt_len"], matching)
+        attempted.append({"doc_id": d.doc_id, "n_windows": len(d.windows),
+                          "status": "PROMPT" if p else "SKIPPED_NO_ZERO_HIT_WINDOW"})
         if p:
             prompts.append(p[0])
         if len(prompts) == fz["n_test_docs"]:
@@ -295,22 +325,32 @@ def stage_run(args, cfg, contract):
                 rows.append({"doc_id": doc_id, "method": meth, "role": role, "status": role})
                 continue
             t1 = time.perf_counter()
-            full = _generate(be, ids, meth, rho, j, vecs, n_new)
-            t_gen = time.perf_counter() - t1
-            text = be.tok.decode(full[0, ids.shape[1]:].tolist())
-            lab = label(text, lex)
-            lp, hook = _edited_logprobs(be, ids, meth, rho, j, vecs)
-            rows.append({"doc_id": doc_id, "method": meth, "role": role, "status": "OK", "budget": bname, "rho": rho,
-                         "prompt_ids": " ".join(map(str, p)),
-                         **lab, "hits_per_generated_token": lab["hits"] / n_new,
-                         "kl_prompt_teacher_forced": _kl(base, lp),
-                         "edit_norm_per_position_median": float(hook.delta[1:].norm(dim=-1).median()),
-                         "edit_mean_component_max": float(hook.delta.mean(-1).abs().max()),
-                         **_internal(be, hook.x, hook.delta, j),
-                         "continuation_nll_unedited_model": _continuation_nll(be, full, ids.shape[1]),
-                         "seconds_generation": t_gen, "seconds_row": time.perf_counter() - t1,
-                         "continuation_ids": " ".join(map(str, full[0, ids.shape[1]:].tolist())),
-                         "continuation": text})
+            try:
+                full = _generate(be, ids, meth, rho, j, vecs, n_new)
+                t_gen = time.perf_counter() - t1
+                cont = full[0, ids.shape[1]:].tolist()
+                text = be.tok.decode(cont)
+                if matching == "bounded_v1":
+                    lab = bounded_label(text, lex, before=be.tok.decode([p[-1]]), n_tokens=len(cont))
+                else:
+                    lab = label(text, lex)
+                    lab["hits_per_generated_token"] = lab["hits"] / n_new
+                lp, hook = _edited_logprobs(be, ids, meth, rho, j, vecs)
+                rows.append({"doc_id": doc_id, "method": meth, "role": role, "status": "OK", "budget": bname, "rho": rho,
+                             "prompt_ids": " ".join(map(str, p)), **lab, "n_generated_tokens": len(cont),
+                             "kl_prompt_teacher_forced": _kl(base, lp),
+                             "edit_norm_per_position_median": float(hook.delta[1:].norm(dim=-1).median()),
+                             "edit_mean_component_max": float(hook.delta.mean(-1).abs().max()),
+                             **_internal(be, hook.x, hook.delta, j),
+                             "continuation_nll_unedited_model": _continuation_nll(be, full, ids.shape[1]),
+                             "seconds_generation": t_gen, "seconds_row": time.perf_counter() - t1,
+                             "continuation_ids": " ".join(map(str, cont)), "continuation": text})
+            except Exception as e:  # kept as a row: failures are reported, never dropped
+                rows.append({"doc_id": doc_id, "method": meth, "role": role, "status": "FAILED", "budget": bname,
+                             "rho": rho, "error": f"{type(e).__name__}: {e}", "seconds_row": time.perf_counter() - t1})
+    os.makedirs(args.out, exist_ok=True)
+    with open(os.path.join(args.out, "attempted_test_docs.json"), "w") as f:
+        json.dump(attempted, f, indent=1)
     os.makedirs(args.out, exist_ok=True)
     path = os.path.join(args.out, "raw_run.csv")
     with open(path, "w", newline="") as f:
@@ -349,16 +389,99 @@ def stage_summarize(args, cfg, contract):
                 paired_unit_differences(rows, "doc_id", key, "method", a, b, num(metric)), stat=_mean)
     ctrl = [r for r in rows if r["method"] == CONTROL]
     ref = {r["doc_id"]: r["continuation_ids"] for r in rows if r["method"] == "no_edit"}
-    out = {"per_method_at_selected_budget": per, "paired": paired,
+    allrows = list(csv.DictReader(open(path)))
+    status_counts = defaultdict(lambda: defaultdict(int))
+    for r in allrows:
+        status_counts[r["method"]][r["status"]] += 1
+    pr = cfg.get("primary", {"a": "jacobian_ln", "b": "decoder", "metric": "success"})
+    ha = {r["doc_id"]: int(float(r[pr["metric"]])) for r in rows if r["method"] == pr["a"]}
+    hb = {r["doc_id"]: int(float(r[pr["metric"]])) for r in rows if r["method"] == pr["b"]}
+    both = sorted(set(ha) & set(hb))
+    disc = {"both_hit": sum(ha[u] and hb[u] for u in both), "a_only": sum(ha[u] and not hb[u] for u in both),
+            "b_only": sum(hb[u] and not ha[u] for u in both), "neither": sum(not ha[u] and not hb[u] for u in both)}
+    prim = cluster_bootstrap({u: ha[u] - hb[u] for u in both}, stat=_mean)
+    verdict = ("NOT_ESTIMABLE" if prim["lo"] is None else
+               "SUPPORTED (interval above 0)" if prim["lo"] > 0 else
+               "REVERSED (interval below 0)" if prim["hi"] < 0 else "NOT_SUPPORTED (interval includes 0; not equivalence)")
+    test_ids = sorted({r["doc_id"] for r in allrows})
+    overlap = {}
+    p01 = "results/real01r/raw_run.csv"
+    if os.path.exists(p01):
+        used01 = {r["doc_id"] for r in csv.DictReader(open(p01)) if r.get("doc_id")}
+        overlap["test_docs_also_in_real01r_pilot"] = sorted(set(test_ids) & used01)
+    cal = json.load(open(os.path.join(args.out, "calibration_frozen.json")))
+    overlap["test_docs_in_calibration_ids"] = sorted(set(test_ids) & set(cal["calibration_doc_ids"]))
+    att_path = os.path.join(args.out, "attempted_test_docs.json")
+    attempted = json.load(open(att_path)) if os.path.exists(att_path) else []
+    out = {"primary": {**pr, "n_docs": len(both), "mean_difference": prim, "discordant": disc, "verdict": verdict},
+           "row_status_counts": {m: dict(v) for m, v in status_counts.items()},
+           "attempted_test_docs": {"n": len(attempted), "skipped": [a for a in attempted if a["status"] != "PROMPT"]},
+           "overlap": overlap,
+           "per_method_at_selected_budget": per, "paired": paired,
            "control_mean_only": {"n": len(ctrl), "identical_continuation_to_no_edit":
                                  sum(r["continuation_ids"] == ref.get(r["doc_id"]) for r in ctrl),
                                  "max_kl": max((float(r["kl_prompt_teacher_forced"]) for r in ctrl), default=None)},
            "interpretation_rule": cfg["interpretation_rule"],
            "note": "unit = test document (one prompt each); statistic = mean over documents; intervals are "
-                   "document-bootstrap percentiles, descriptive; an interval that includes 0 is not evidence of equivalence"}
+                   "document-bootstrap percentiles (2000, seed 0); only the primary comparison is confirmatory; "
+                   "an interval that includes 0 is not evidence of equivalence"}
     with open(os.path.join(args.out, "summary.json"), "w") as f:
         json.dump(out, f, indent=2)
-    record(args.out, "summarize", "RAN", t0)
+    record(args.out, "summarize", "RAN", t0, primary_verdict=verdict)
+
+
+def stage_support(args, cfg, contract):
+    """Text-only lexical support on calibration documents (tokenizer only; no model forward)."""
+    t0, c0 = time.time(), time.process_time()
+    from transformers import GPT2TokenizerFast
+
+    class _Tok:
+        pass
+
+    be = _Tok()
+    m = contract["model"]
+    be.tok = GPT2TokenizerFast.from_pretrained(m["hf_repo"], revision=m["revision"], cache_dir=args.cache_dir,
+                                               local_files_only=not args.allow_download)
+    be.tokenize = lambda t: be.tok(t, add_special_tokens=False)["input_ids"]
+    be.bos_id = int(contract["tokenizer"]["bos_token_id"])
+    lex = cfg["task"]["lexicon"]
+    matching = cfg["task"].get("matching")
+    cc = cfg["calibration_only_choices"]
+    docs = sorted((d for d in load_documents(contract, args.cache_dir, args.allow_download) if d.split == "calibration"),
+                  key=lambda d: d.doc_id)
+    D.tokenize_documents(docs, be.tokenize, be.bos_id)
+    per_doc, n_win, n_pos, word_hits = {}, 0, 0, defaultdict(int)
+    for d in docs:
+        cap = cc["windows_per_doc_cap"]
+        pos = 0
+        for wi in (range(len(d.windows)) if cap is None else capped_windows(d, cap)):
+            h = _window_hits(be, d, wi, lex, matching)
+            n_win += 1
+            if h > 0:
+                pos += 1
+                for wd in sorted(set(lex)):
+                    word_hits[wd] += _window_hits_single(be, d, wi, wd, matching)
+        per_doc[d.doc_id] = pos
+        n_pos += pos
+    need = cc["min_hit_windows"]
+    verdict = "SUPPORTED" if n_pos >= need else "BLOCKED"
+    rep = {"config_id": cfg["config_id"], "matching": matching, "n_calibration_docs": len(docs),
+           "n_windows": n_win, "positive_windows": n_pos, "min_hit_windows": need, "verdict": verdict,
+           "n_docs_with_positive_window": sum(v > 0 for v in per_doc.values()),
+           "positive_windows_per_doc": per_doc,
+           "max_positive_windows_in_one_doc": max(per_doc.values()) if per_doc else 0,
+           "windows_with_entry": dict(word_hits),
+           "note": "windows are not independent documents; counts are text-only (no model forward)",
+           "wall_seconds": time.time() - t0, "cpu_seconds_process": time.process_time() - c0, "threads": 1}
+    os.makedirs(args.out, exist_ok=True)
+    with open(os.path.join(args.out, "support.json"), "w") as f:
+        json.dump(rep, f, indent=1)
+    record(args.out, "support", "RAN", t0, config_id=cfg["config_id"], verdict=verdict, positive_windows=n_pos,
+           n_windows=n_win, n_docs_with_positive_window=rep["n_docs_with_positive_window"])
+
+
+def _window_hits_single(be, d, wi, word, matching):
+    return int(_window_hits(be, d, wi, [word], matching) > 0)
 
 
 def _mean(v):
@@ -367,7 +490,7 @@ def _mean(v):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["check-env", "calibrate", "run", "summarize"])
+    ap.add_argument("stage", choices=["check-env", "support", "calibrate", "run", "summarize"])
     ap.add_argument("--config", default="configs/p3_real02_lx.json")
     ap.add_argument("--out", default="results/real02_lx")
     ap.add_argument("--cache-dir", default=None)
@@ -381,7 +504,8 @@ def main(argv=None) -> int:
         record(args.out, "check-env", "RAN", t0, env=env,
                verdict="DEPENDENCIES_AVAILABLE" if env["all_available"] else "BLOCKED_DEPENDENCIES")
     else:
-        {"calibrate": stage_calibrate, "run": stage_run, "summarize": stage_summarize}[args.stage](args, cfg, contract)
+        {"support": stage_support, "calibrate": stage_calibrate, "run": stage_run,
+         "summarize": stage_summarize}[args.stage](args, cfg, contract)
     return 0
 
 

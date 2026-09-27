@@ -1,0 +1,176 @@
+{
+  "config_id": "p3_real02_space_v1",
+  "experiment_id": "P3-REAL-02-SPACE",
+  "frozen_before_run": true,
+  "frozen_note": "Written and committed before any SPACE corpus count, feature forward or generation. New topic branch; the wedding branch (P3-REAL-02-LX v1/v1.1, both calibration BLOCKED; test and generation NOT_RUN) is closed and its records are kept unchanged.",
+  "amendment_topic_change": {
+    "from": "wedding lexicon (ActAdd), configs/p3_real02_lx_v1_1.json",
+    "to": "PPLM space word list, data_external/pplm_space/space.txt (uber-research/PPLM commit e236b8989322128360182d29a79944627957ad47, paper_code/wordlists/space.txt, sha256 de1a50a46f3f68b347f9c800cb8981865b85a94f83a15cea7c653067f4b82dc5)",
+    "why": "wedding calibration support was 13 of 1943 windows < 20; the new topic was fixed by the user's Round-5 instruction, not chosen by searching topics for good results or support",
+    "what_else_changed": "lexicon matching rules made explicit (task.matching = bounded_v1); a text-only support stage runs first; primary estimand narrowed to one comparison (LN vs decoder); summary records attempted prompts, failures and overlaps",
+    "unchanged_from_v1_1": "model/SAE/layer/float64/projector, window rule (all calibration windows), min_hit_windows = 20, feature and DiffMean selection rule, kappa, norm-budget grid, prompts, generation, methods, test document order, cost rule"
+  },
+  "contract": "configs/p3_contract_gpt2_res_jb_l8.json",
+  "assets": "already-downloaded pinned model/SAE/WikiText files only (HF_HUB_OFFLINE=1); no new download, no feature sweep",
+  "task": {
+    "name": "space-lexicon occurrence (lexical proxy)",
+    "metric_name": "space-lexicon occurrence",
+    "lexicon": [
+      "planet",
+      "galaxy",
+      "space",
+      "universe",
+      "orbit",
+      "spacecraft",
+      "earth",
+      "moon",
+      "comet",
+      "star",
+      "astronaut",
+      "aerospace",
+      "asteroid",
+      "spaceship",
+      "starship",
+      "galactic",
+      "satellite",
+      "meteor"
+    ],
+    "lexicon_source": "PPLM (Dathathri et al., arXiv:1912.02164; ICLR 2020 per arXiv comments), official repository file paper_code/wordlists/space.txt at the pinned commit; Apache-2.0 (LICENSE copied)",
+    "not_a_reproduction": "only the published lexical target definition is used; the PPLM method is not reproduced",
+    "matching": "bounded_v1",
+    "matching_rules": [
+      "lowercase the text",
+      "a word is a maximal run of ASCII letters [a-z]; any other character is a boundary (possessive 's and hyphens split words)",
+      "entries match whole consecutive words exactly: no substrings, no stemming, no inflection (e.g. 'stars' and 'spacecrafts' do not match)",
+      "multi-word entries (none in this list) would match consecutive words, longest entry first",
+      "window counts use the decoded window text; a word cut at the window edge (previous or next token continues it with a letter) is a fragment and never matches",
+      "generated continuation: a leading fragment continuing the prompt's last token is dropped; the final generated word is counted as generated",
+      "counts are on decoded text, never on BPE token strings, so token-prefix substrings cannot create hits"
+    ],
+    "label": "on the generated continuation only: any_hit = at least one lexicon word; hits_per_generated_token = hits / generated tokens (32); hits per word recorded",
+    "lexicon_used_in_selection": "yes: the SAE feature and the DiffMean direction are chosen on calibration windows split by the same lexicon, so the metric is a supervised lexical objective, not an independent semantic check",
+    "polysemy": "entries such as 'space', 'star', 'earth' and 'moon' are polysemous in WikiText; occurrence is lexical, not topical",
+    "label_scope": "lexical proxy only; semantic topic success is NOT_RUN"
+  },
+  "support_stage_required": true,
+  "support_rule": "text-only count of calibration windows with >= 1 lexicon word under task.matching (tokenizer only, no model forward); verdict SUPPORTED iff positive windows >= calibration_only_choices.min_hit_windows (20, not lowered); otherwise P3-REAL-02-SPACE is BLOCKED. No third topic, corpus expansion or lower minimum in this round.",
+  "data": {
+    "calibration_documents": "WikiText-103 validation articles (contract revision)",
+    "test_documents": "WikiText-103 test articles",
+    "prompt_len": 32,
+    "prompt_rule": "window (BOS + 127 tokens) with zero lexicon hits under task.matching, chosen with seeded_rng('prompts', doc_id); prompt = BOS + first 31 tokens",
+    "independent_unit": "test document (one prompt per document)"
+  },
+  "calibration_only_choices": {
+    "windows_per_doc_cap": null,
+    "feature": "argmax over SAE features of mean activation on tokens of calibration windows with >= 1 lexicon hit minus mean on windows with 0 hits; top-5 recorded, not used",
+    "min_hit_windows": 20,
+    "if_fewer_hit_windows": "BLOCKED",
+    "diffmean_vector": "mean centred hook state over tokens of hit windows minus mean over tokens of no-hit windows (calibration); projected by P before use",
+    "norm_budget_multipliers": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.8
+    ],
+    "norm_budget_reference": "median L2 norm of centred non-BOS calibration hook states",
+    "n_calibration_prompts": 32,
+    "calibration_prompts_per_doc": 4,
+    "kappa_nats": 0.1,
+    "matched_quality_rule": "for each ranked method, the largest budget whose mean over calibration prompts of KL(P_base || P_edit) (teacher forced on the prompt, averaged over prompt positions, edit at every position) is <= kappa; if no budget satisfies it the method is NOT_RUN_NO_BUDGET_WITHIN_KAPPA (no substitution)"
+  },
+  "methods": {
+    "reference": "no_edit",
+    "ranked": [
+      "decoder",
+      "encoder_grad",
+      "jacobian_ln",
+      "diffmean"
+    ],
+    "definitions": {
+      "decoder": "rho * P W_dec[j] / ||P W_dec[j]|| at every position",
+      "encoder_grad": "rho * P W_enc[:, j] / ||P W_enc[:, j]|| at every position",
+      "jacobian_ln": "per position t: least-norm solution of (M_t P) u = e_1 (M_t = encoder rows of j and of the non-target features active at t), u in range(P), scaled to norm rho",
+      "diffmean": "rho * P v / ||P v|| (calibration DiffMean)"
+    },
+    "control": {
+      "name": "mean_only",
+      "definition": "rho_max * 1/sqrt(d) at every position, rho_max = largest norm budget; fixed amplitude, never budget-matched, never ranked",
+      "expected": "identical logits and continuation to no_edit up to floating point (P 1 = 0; GPT-2 residual readers are LayerNorms)"
+    },
+    "not_run": {
+      "random": "not in the LX baseline list (reduces cost); NOT_RUN",
+      "SAE-TS": "NOT_RUN (needs a fitted effect model)",
+      "FGAA": "NOT_RUN (needs a fitted effect model)"
+    }
+  },
+  "generation": {
+    "new_tokens": 32,
+    "decoding": "greedy argmax (temperature 0, no top-p, no sampling, no RNG)",
+    "edit_span": "every position, prompt (including BOS) and generated",
+    "kv_cache": "none (one forward per generated token)"
+  },
+  "test": {
+    "doc_order_seed": "p3-real02-lx-docs",
+    "doc_rule": "test documents sorted by doc_id, shuffled with seeded_rng('p3-real02-lx-docs') (the order frozen for LX, never used), then the first n_test_docs with at least one zero-hit window; every attempted document is recorded, including skipped ones",
+    "n_docs_options": [
+      32,
+      24,
+      16,
+      8
+    ],
+    "evaluate": "no_edit once; each ranked method at its calibration-selected budget only; mean_only control at rho_max",
+    "overlap_disclosure": "test documents are WikiText-103 test articles; many were also used (as edit sites) in the REAL-01R internal fidelity pilot; the summary lists the overlap; they are not unseen by this project"
+  },
+  "primary": {
+    "a": "jacobian_ln",
+    "b": "decoder",
+    "metric": "success",
+    "estimand": "mean over test documents of [any_hit(LN) - any_hit(decoder)] at each method's calibration-selected budget, 32 greedy tokens, one prompt per document",
+    "unit": "test document",
+    "interval": "document bootstrap percentile 95% (2000 resamples, seed 0); discordant counts reported",
+    "multiplicity": "one confirmatory comparison; every other comparison and metric is secondary and descriptive, with no multiplicity claim"
+  },
+  "secondary": [
+    "any_hit for every method and paired against no_edit, decoder, encoder_grad and diffmean",
+    "hits_per_generated_token and hits per word",
+    "generated length (tokens, words)",
+    "KL(P_base || P_edit) on the common prompt (teacher forced) and the calibration KL at the selected budget",
+    "continuation NLL under the unedited model",
+    "edit norm and mean component",
+    "canonical internal target change and non-target drift at prompt positions"
+  ],
+  "metrics": {
+    "behaviour": [
+      "any_hit (>= 1 lexicon word)",
+      "hits_per_generated_token"
+    ],
+    "quality": [
+      "KL(P_base || P_edit) teacher forced on the common prompt, averaged over prompt positions",
+      "NLL of the generated continuation under the unedited model (fluency proxy)"
+    ],
+    "internal": [
+      "canonical SAE readout E(x + P delta) - E(x) at non-BOS prompt positions: mean target change, mean non-target L2 drift, mean newly active count; never used as the label"
+    ],
+    "edit": [
+      "median per-position edit norm",
+      "max |mean component| of the edit"
+    ],
+    "cost": [
+      "seconds per generation and per row",
+      "stage wall seconds",
+      "threads"
+    ]
+  },
+  "interpretation_rule": "LN is reported better than decoder on space-lexicon occurrence only if the primary interval lies above 0. An interval that includes 0 is 'not supported', never equivalence. Sparse events give wide intervals and are reported as they are; no change of seed, length, budget, test set or threshold after the run. Lower internal drift or lower KL never establishes superiority; no semantic claim.",
+  "budget": {
+    "threads": 2,
+    "calibrate_wall_clock_minutes_max": 20,
+    "run_wall_clock_minutes_max": 30,
+    "cumulative_wall_clock_minutes_max_this_branch": 60,
+    "reduction_rule": "the calibrate stage times 2 no_edit and 2 jacobian_ln generations on calibration prompts and sets n_test_docs to the largest option whose projected run time fits; if none fits, the run stage is NOT_RUN",
+    "on_exceeding": "a stage that would exceed its budget is not started; results already written are kept"
+  },
+  "cli": "HF_HOME=<cache> HF_HUB_OFFLINE=1 PYTHONPATH=src <venv>/bin/python -m saeedit.real.real02 <support|calibrate|run|summarize> --config configs/p3_real02_space.json --out results/real02_space"
+}
