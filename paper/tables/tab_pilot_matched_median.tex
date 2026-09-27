@@ -1,17 +1,17 @@
-\begin{tabular}{llcccccc}
+\begin{tabular}{llccccccc}
 \toprule
-Target & Method & $n_{\mathrm{doc}}$ & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ & KL$\times10^{3}$ & $\|\delta\|$ \\
+Target & Method & matched & $n_{\mathrm{doc}}$ & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ & KL$\times10^{3}$ & $\|\delta\|$ \\
 \midrule
-active & decoder & 42 & 0.583 & 0.311 & 0.656 & 5.32 & 21.6 \\
- & rescaled (weight-only) & 42 & 0.583 & 0.311 & 0.656 & 5.32 & 21.6 \\
- & encoder row & 42 & 0.681 & 0.366 & 0.778 & 1.03 & 11.8 \\
- & LN ($J_EP$) & 42 & $\approx 0$ & 0.114 & 0.114 & 0.96 & 12.7 \\
- & random & 24 & 7.33 & 108 & 108 & 691 & 438 \\
+active & decoder & 64/64 & 42 & 0.583 & 0.311 & 0.656 & 5.32 & 21.6 \\
+ & rescaled (weight-only) & 64/64 & 42 & 0.583 & 0.311 & 0.656 & 5.32 & 21.6 \\
+ & encoder row & 64/64 & 42 & 0.681 & 0.366 & 0.778 & 1.03 & 11.8 \\
+ & LN ($J_EP$) & 64/64 & 42 & $\approx 0$ & 0.114 & 0.114 & 0.96 & 12.7 \\
+ & random & 31/64 & 24 & 7.33 & 108 & 108 & 691 & 438 \\
 \midrule
-inactive & decoder & 40 & 0.583 & 0.361 & 0.716 & 3.41 & 36.9 \\
- & rescaled (weight-only) & 40 & 0.342 & 0.112 & 0.37 & 0.65 & 22.5 \\
- & encoder row & 40 & 0.943 & 0.943 & 1.36 & 1.38 & 21 \\
- & LN ($J_EP$) & 40 & $\approx 0$ & 0.295 & 0.295 & 1.16 & 22.5 \\
- & random & 23 & 17.4 & 347 & 348 & 327 & 1.17e+03 \\
+inactive & decoder & 64/64 & 40 & 0.583 & 0.361 & 0.716 & 3.41 & 36.9 \\
+ & rescaled (weight-only) & 0/64 & 40 & 0.342 & 0.112 & 0.37 & 0.65 & 22.5 \\
+ & encoder row & 64/64 & 40 & 0.943 & 0.943 & 1.36 & 1.38 & 21 \\
+ & LN ($J_EP$) & 64/64 & 40 & $\approx 0$ & 0.295 & 0.295 & 1.16 & 22.5 \\
+ & random & 29/64 & 23 & 17.4 & 347 & 348 & 327 & 1.17e+03 \\
 \bottomrule
 \end{tabular}

@@ -1,8 +1,80 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-09-27 (fourth session). Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-09-27 (fifth session, Round 5). Branch: `claude/magical-bell-8vyrpd`.
 
-## Fourth session summary (read first)
+## Fifth session summary (Round 5; read first)
+
+Checked at start: HEAD `78d95ac` equal to origin; clean tree; venv and HF cache (672 MB) present;
+no LaTeX compiler; `/nvmedata` does not exist in this sandbox, so it was not created.
+
+**Kept verdicts (unchanged).**
+- Raw mean-only drift ≈ 125 and canonical drift ≈ 0 measure different things.
+- The v2 interpretation stays withdrawn, and the float32 CONTRACT_FAIL stays.
+- Wedding LX v1/v1.1: calibration BLOCKED; test and generation NOT_RUN. The branch is
+  closed; 13/1943 is lexical support, not a steering failure.
+
+**External read (only what the instruction named).**
+- `git ls-remote` of uber-research/PPLM gave commit `e236b898…`.
+- Fetched `paper_code/wordlists/space.txt` (142 B, 18 words, sha256 `de1a50a4…`), LICENSE
+  (Apache-2.0) and the arXiv abstract page (metadata).
+- No weights and no corpus.
+- Files are in `data_external/pplm_space/` with PROVENANCE.json.
+- Separately, a status-only check of the three ICML 2027 URLs again returned 404.
+
+**P3-REAL-02-SPACE** (`configs/p3_real02_space.json`, frozen in commit caf43c8 before any
+count).
+- Matching rules: bounded whole-word (`lexicon.bounded_hits`, unit-tested).
+- Support (text-only): 58/1943 calibration windows in 22/60 articles (max 9 per article;
+  "star" 28) → SUPPORTED.
+- Calibrate: RAN, 961 s; feature 4671; every actor at 0.1× the median norm under κ = 0.1
+  (cal KL 0.021–0.054).
+- Run: RAN, 1334 s; 32/32 articles attempted, none skipped, 0 failed rows; 28 of them were
+  edit sites in the REAL-01R pilot.
+- **Primary LN − decoder any-hit: 0 with 0/0 discordant articles.** The bootstrap interval
+  degenerates to [0, 0]; the exact 95% bound is 10.9%. Verdict: NOT_SUPPORTED, which is not
+  equivalence.
+- Decoder, encoder row and LN never changed occurrence relative to no edit. The single hit
+  is "All-Star" → "star" (polysemy). DiffMean gained 2 articles and lost 1.
+- Post hoc, descriptive: edits changed 24–31/32 continuations; mean-only changed 0/32.
+
+**Manuscript v4** (edited in place; body ≈ 3960 words, down from 5170).
+- Three core claims: readout caveat (C41), fidelity with full denominator (C38), null
+  lexical pilot (C48).
+- Three core tables: coordinates, fidelity + denominators, space pilot.
+- Wedding records moved to the appendix.
+- **COMPILE_NOT_RUN** (no TeX).
+
+**Packages.**
+- `export_bundle/p3_v4_anonymous.tar.gz`: anonymity scan passed; claimed contents present;
+  no internal notes.
+- `export_bundle/p3_v4_internal.tar.gz`.
+- Weights are not included; they are pinned by revision + sha256 in
+  `configs/p3_asset_hashes.json`.
+
+### Fifth session: time and cost ledger
+
+wall = elapsed; CPU-s = process CPU over all threads; threads = torch intra-op setting.
+
+| step | wall | CPU-s | threads | result read? |
+|---|---|---|---|---|
+| PPLM ls-remote + 2 files + arXiv page | < 5 s | – | – | yes (list, license, metadata) |
+| ICML 2027 URL status check | < 5 s | – | – | status codes only |
+| unit tests (stdlib) | < 1 s | – | 1 | PASS |
+| adapter model tests (3) | 93.8 s (cold model load) | not recorded | 2 | PASS (not hypothesis support) |
+| asset sha256 (local cache) | 0.7 s | – | 1 | – |
+| SPACE support (tokenizer only) | 11.7 s | 6.1 | 1 | yes (support counts) |
+| SPACE calibrate (scan 742, KL sweep 189, cost probe 28) | 961 s | not recorded | 2 | calibration only |
+| SPACE run (32 × 6 generations) | 1334 s | not recorded | 2 | not read until summary |
+| SPACE summarize | 1.2 s | – | 1 | yes |
+| post-hoc continuation-change count | < 1 s | – | 1 | yes, after summary (labelled post hoc) |
+| paper assets / tex_check / packages | 1–3 s each | – | 1 | – |
+| LaTeX build | – | – | – | COMPILE_NOT_RUN |
+
+Cumulative SPACE compute: calibrate + run = 2295 s wall, within the fixed 60-minute budget.
+
+**Next decision (one, needs the user):** see RESEARCH_PACKET §14.
+
+## Fourth session summary (previous)
 
 Scope, as instructed: one readout-closure check, one re-aggregation, one limited lexical pilot
 (P3-REAL-02-LX), and manuscript v3. No new project, gate, toy or feature sweep. No new

@@ -1,10 +1,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Manuscript v3 (P3). TARGET_YEAR = 2027, TEMPLATE_YEAR = 2026, SUBMISSION_READY = false.
-% No official ICML 2027 style was found on 2026-09-26 (the URLs listed in paper/README.md
-% returned 404); the unmodified official ICML 2026 style files are used temporarily. Do not
-% rename the style or change margins/fonts.
-% Order (v3): (a) raw vs canonical coordinates -> (b) admissible feature realization ->
-% (c) matched-denominator robustness -> (d) lexical change / quality tradeoff.
+% Manuscript v4 (P3). TARGET_YEAR = 2027, TEMPLATE_YEAR = 2026, SUBMISSION_READY = false.
+% The three ICML 2027 URLs listed in paper/README.md returned 404 on 2026-09-26 and again on
+% 2026-09-27 (status check only); that says nothing about other 2027 sources. The unmodified
+% official ICML 2026 style files are used temporarily. Do not rename the style or change
+% margins/fonts.
+% Order (v4): (a) raw vs canonical coordinates -> (b) admissible feature realization with its
+% full denominator -> (c) lexical change / quality (P3-REAL-02-SPACE).
 % Every number in the text comes from generated_numbers.tex or tables/*.tex, which
 % src/saeedit/paper_assets.py writes from results/. Missing results are marked
 % \todo{EXPERIMENT_ID: required evidence}.
@@ -74,26 +75,24 @@
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-  Steering with a sparse autoencoder (SAE) edits an activation along a decoder direction and
-  reports the edit as a change of one feature. For GPT-2 small and a public layer-8
-  residual SAE we audit that report in four steps and propose no method.
-  (a) \emph{Coordinates.} We prove, for GPT-2 only, that edits along the all-ones direction
-  leave the logits unchanged, and we read edits canonically as $E(P(h+\delta))$. A drift of
-  \CxMeanDrift{} times the edit norm that we had attributed to such a model-invisible edit
-  comes from the raw readout $E(x+\delta)$; canonically it is at most \ClCanonMax. Our fast
-  implementation matches TransformerLens/SAELens in float64, and the pre-registered float32
-  check fails through rounding.
-  (b) \emph{Realization.} In a conditional pilot (\PilotFeatures{} features, \PilotDocs{}
-  held-out documents), target-matched projected-decoder edits leave non-target drift of
-  \PilotAllDec$\alpha$, and a least-norm correction posed with $J_E(Ph)P$ leaves
-  \PilotAllLn$\alpha$. In dense toy regimes the same correction moves drift onto newly
-  activated features.
-  (c) \emph{Denominators.} The main methods are matched at every test point, and an earlier
-  readout that mixed matched and unmatched rows is corrected.
-  (d) \emph{Behavior.} Our only behavioral test, wedding-lexicon occurrence, is a lexical
-  proxy and not semantic topic control. It was blocked at calibration, because the
-  calibration text had \LxHitsVOneOne{} keyword windows against a pre-set minimum of 20. We
-  report no behavioral effect.
+  Steering with a sparse autoencoder (SAE) edits an activation along a feature direction and
+  reports the edit as a change of that feature. For GPT-2 small and a public layer-8 residual
+  SAE we check that report in three steps and propose no method.
+  (a) \emph{Readout.} Because GPT-2's LayerNorms ignore the all-ones direction, an edit
+  should be read canonically, as $E(P(h+\delta))$. Read raw, as $E(x+\delta)$, a
+  model-invisible edit appears to move the SAE by \ClRawMed{} times its norm; canonically the
+  change is at most \ClCanonMax.
+  (b) \emph{Same-layer fidelity.} In a conditional pilot (\PilotFeatures{} features,
+  \PilotDocs{} held-out documents) with every method matched to the target at every test
+  point, projected-decoder edits leave non-target drift of \PilotAllDec$\alpha$, and a
+  least-norm correction posed with $J_E(Ph)P$ leaves \PilotAllLn$\alpha$. In dense toy
+  regimes the same correction moves drift onto newly activated features.
+  (c) \emph{Lexical behavior.} In a pre-registered lexical pilot on \SpDocs{} held-out
+  articles (PPLM's space word list; a lexical proxy, not semantic control), edits at a KL
+  cap of 0.1 nats changed most greedy continuations, yet no SAE-feature edit changed
+  space-lexicon occurrence relative to no edit. The correction and the decoder agreed on
+  every article (0 discordant, exact 95\% bound \SpBound\%). Lower internal drift did not
+  translate into a lexical difference.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -101,62 +100,44 @@
 \label{sec:intro}
 
 Sparse autoencoders (SAEs) are used to steer language models by editing an internal
-activation along a learned feature. Common implementations add a multiple of the feature's
-decoder vector to the residual stream, or clamp the feature inside the SAE reconstruction
-while keeping the reconstruction error
+activation along a learned feature, typically by adding a multiple of the feature's decoder
+vector or by clamping the feature inside the SAE reconstruction
 \citep{templeton2024scaling,obrien2025steering,wu2025axbench}. The edit is then reported in
-the SAE's vocabulary: ``feature $j$ was increased by $\alpha$''. We ask what that sentence
-certifies for one public model--SAE pair, GPT-2 small with a residual SAE at layer 8, and we
-check its preconditions in a fixed order.
+the SAE's vocabulary: ``feature $j$ was increased by $\alpha$''. For one public model--SAE
+pair, GPT-2 small with a residual SAE at layer 8, we check that sentence in a fixed order:
 \begin{enumerate}
-  \item[(a)] \emph{Coordinates.} Which activation does the SAE read after an edit? We
-  separate a \emph{raw off-slice} readout $E(x+\delta)-E(x)$ from the \emph{canonical
-  reprojected} readout $E(P(h+\delta))-E(Ph)$, where $x = Ph$ is the SAE's training
-  coordinate (\cref{sec:coord}).
-  \item[(b)] \emph{Admissible feature realization.} Among edits the model can see, how much
-  of the re-encoded change lands on the target, and does a local correction move the rest
-  elsewhere (\cref{sec:fidelity})?
-  \item[(c)] \emph{Matched denominators.} Are methods compared on the same test points once
-  infeasible and unmatched rows are counted (\cref{sec:denominators})?
-  \item[(d)] \emph{Lexical change and quality.} Does a better internal realization give more
-  wedding-lexicon occurrence at matched output change (\cref{sec:external})? This is a
-  lexical proxy, not semantic topic control.
+  \item[(a)] \emph{Readout.} Which input does the SAE read after an edit (\cref{sec:coord})?
+  \item[(b)] \emph{Same-layer fidelity.} Among edits the model can see, how much of the
+  re-encoded change lands on the target, on a common denominator of test points
+  (\cref{sec:fidelity})?
+  \item[(c)] \emph{Lexical behavior.} Does a cleaner internal edit change a lexical target
+  more at matched output change (\cref{sec:external})?
 \end{enumerate}
 
-Prior work covers pieces of this. Encoder and decoder directions differ
-\citep{chanin2025absorption,oneill2025compute}, and encoder--decoder misalignment has been
-named as one cause of steering failure, next to off-manifold artifacts
-\citep{luo2026learning}. SAE-targeted steering solves for vectors that hit SAE features
-through a fitted effect map, and reports that a pseudo-inverse of that map did worse
-\citep{chalnev2024improving}. Least-norm readout edits and null-space protection are
-standard \citep{geiger2024finding,wu2024reft,fang2025alphaedit,cui2026sae}. We therefore do
-not propose a method.
-
-\paragraph{Contributions.}
+Much of the machinery is known. Encoder and decoder directions differ
+\citep{chanin2025absorption,oneill2025compute}, and misalignment has been named as one cause
+of steering failure \citep{luo2026learning}. SAE-targeted steering fits an effect map and
+reports that its pseudo-inverse did worse \citep{chalnev2024improving}. Least-norm readout
+edits and null-space protection are standard
+\citep{geiger2024finding,wu2024reft,fang2025alphaedit,cui2026sae}, and LayerNorm's
+invariance to the mean direction is elementary. We propose no method and claim three
+bounded results:
 \begin{itemize}
-  \item \emph{Readout convention} (\cref{sec:coord}). For GPT-2 we prove that adding
-  $c\mathbf{1}$ at the hook leaves the logits unchanged, and we define the canonical readout,
-  which depends only on the model-visible part of an edit. An executed contract shows that
-  our fast path equals the canonical TransformerLens/SAELens path in float64; the
-  pre-registered float32 check fails through rounding, and we keep that failure. A
-  previously reported ``$\CxMeanDrift\times$ SAE drift'' of a model-invisible edit is a raw
-  off-slice readout; the canonical readout of the same edit is at most \ClCanonMax.
-  \item \emph{Admissible realization, conditional pilot} (\cref{sec:fidelity}). On
-  \PilotDocs{} held-out documents and \PilotFeatures{} features, a least-norm correction posed
-  with $J_{\mathrm{eff}} = J_E(Ph)P$ lowers same-layer non-target drift relative to the
-  projected decoder at matched target change. Controlled toy regimes show where the same
-  correction instead moves drift onto newly activated features.
-  \item \emph{Denominators} (\cref{sec:denominators}). The three main methods are compared
-  on all test points; random directions lose about half of them, unmatched baselines and
-  raw mean-only rows are reported separately, and one earlier gate readout mixed matched and
-  unmatched rows.
-  \item \emph{Lexical pilot} (\cref{sec:external}). The only behavioral test, wedding-lexicon
-  occurrence, was frozen in advance and stopped at calibration: \LxHitsVOneOne{} of
-  \LxWindowsAll{} calibration windows contain a keyword, below the pre-set minimum of 20. No
-  behavioral number exists.
+  \item \emph{Readout convention} (\cref{sec:coord}). The canonical readout
+  $E(P(h+\delta))$, not the raw $E(x+\delta)$, is the quantity that corresponds to what the
+  model receives. The raw convention turns a model-invisible edit into an apparent
+  \ClRawMed$\times$ feature change. This is a measurement caveat, not a new property of
+  LayerNorm.
+  \item \emph{Conditional same-layer fidelity} (\cref{sec:fidelity}). With decoder, encoder
+  row and correction all matched at every test point, the correction lowers same-layer
+  non-target drift relative to the projected decoder in a \PilotFeatures-feature pilot.
+  Controlled toy regimes show where it instead moves drift onto newly activated features.
+  \item \emph{A null lexical pilot} (\cref{sec:external}). At a KL cap of 0.1 nats, no
+  SAE-feature edit changed space-lexicon occurrence on \SpDocs{} held-out articles, and the
+  correction and the decoder never disagreed.
 \end{itemize}
-We make no claim about semantic steering, and lower internal drift or lower KL is never
-taken as evidence that a method is better.
+We make no claim about semantic steering, and lower internal drift or KL is never taken as
+evidence that a method is better.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Related Work}
@@ -230,40 +211,24 @@ achieved change of an edit $\delta$ is $\Delta a = \sigma(p(x+\delta)) - \sigma(
 
 \begin{definition}[Edit-fidelity decomposition]
 \label{def:fidelity}
-Let $A_0$ and $A_1$ be the active sets before and after the edit. The \emph{target error} is
-$|\Delta a_j - \alpha|/\alpha$. The drift terms are $\ell_2$ norms of $\Delta a$ over three
-disjoint groups of non-target features $i\neq j$:
-\begin{itemize}
-  \item $D_{\mathrm{kept}}$ over $i\in A_0\cap A_1$;
-  \item $D_{\mathrm{deact}}$ over $i\in A_0\setminus A_1$;
-  \item $D_{\mathrm{new}}$ over $i\in A_1\setminus A_0$.
-\end{itemize}
-Originally active drift is $D_{\mathrm{orig}} = (D_{\mathrm{kept}}^2 + D_{\mathrm{deact}}^2)^{1/2}$,
-and $D_{\mathrm{all}}$ is the norm over all $i\neq j$. All terms are reported relative to a
-scale: $\alpha$ for target-matched comparisons and the norm budget $\rho$ for equal-norm
-comparisons.
+With active sets $A_0$ and $A_1$ before and after the edit, the \emph{target error} is
+$|\Delta a_j - \alpha|/\alpha$, and the drift terms are $\ell_2$ norms of $\Delta a$ over
+non-target features $i\neq j$ in $A_0\cap A_1$ ($D_{\mathrm{kept}}$), $A_0\setminus A_1$
+($D_{\mathrm{deact}}$) and $A_1\setminus A_0$ ($D_{\mathrm{new}}$), with
+$D_{\mathrm{orig}} = (D_{\mathrm{kept}}^2 + D_{\mathrm{deact}}^2)^{1/2}$ and $D_{\mathrm{all}}$
+over all $i\neq j$. Terms are reported relative to $\alpha$ (target-matched) or to the norm
+budget $\rho$ (equal norm).
 \end{definition}
-For ReLU, JumpReLU and TopK, a feature inactive before and after has zero change. Hence
-$D_{\mathrm{all}}^2 = D_{\mathrm{orig}}^2 + D_{\mathrm{new}}^2$. With $Q = A_0\setminus\{j\}$,
-$D_{\mathrm{orig}}$ and $D_{\mathrm{new}}$ are exactly the protected and unprotected leakage of
-our toy study (checked numerically in our test suite).
+For ReLU, JumpReLU and TopK a feature inactive before and after does not change, so
+$D_{\mathrm{all}}^2 = D_{\mathrm{orig}}^2 + D_{\mathrm{new}}^2$.
 
-\paragraph{Edits compared.}
-\begin{itemize}
-  \item \emph{Decoder}: $\delta = cD_j$ with $c = \alpha$.
-  \item \emph{Rescaled decoder}: $c$ chosen so that $\Delta p_j = \Delta p_j^{\mathrm{req}}$.
-  In the toy study $c$ is computed per input. In the real protocol it is the weight-only
-  $\alpha/(E_j D_j)$, which is deployable but not matched.
-  \item \emph{Encoder gradient}: $\delta\propto E_j^{\top}$, the least-norm edit for the
-  target row alone.
-  \item \emph{\LN{} correction}: $\delta = M^{+}t$ with $M = E_{S\cup Q}$ (the rows of $E$ for
-  the target set $S=\{j\}$ and the protected set $Q$) and
-  $t = (\Delta p_j^{\mathrm{req}},0,\dots,0)$.
-  \item \emph{\LN{} + repair}: up to three rounds that add newly crossed features to $Q$ as
-  equality constraints.
-  \item \emph{Trust region}: $\arg\min_{\|\delta\|\le\tau}\|M\delta - t\|$.
-  \item \emph{Random}: a random direction of the same norm, as a control.
-\end{itemize}
+\paragraph{Edits compared.} The \emph{decoder} edit $\delta = cD_j$; the \emph{rescaled
+decoder}, with $c$ set so that $\Delta p_j = \Delta p_j^{\mathrm{req}}$ (per input in the toy
+study; the deployable weight-only $\alpha/(E_jD_j)$ in the real protocol, which is not
+matched); the \emph{encoder row} $\delta\propto E_j^{\top}$; the \emph{\LN{} correction}
+$\delta = M^{+}t$ with $M = E_{S\cup Q}$ (rows for $S=\{j\}$ and $Q$) and
+$t = (\Delta p_j^{\mathrm{req}},0,\dots,0)$; in the toy study also bounded repair, a trust
+region $\arg\min_{\|\delta\|\le\tau}\|M\delta - t\|$, and random directions.
 
 \paragraph{Admissible edits and readouts.}
 For GPT-2, adding $c\mathbf{1}$ to the residual at the hook leaves the logits unchanged
@@ -288,17 +253,10 @@ Features, positions and base points within a unit are averaged before any summar
 \section{Raw and Canonical Coordinates}
 \label{sec:coord}
 
-A fidelity number means something only if the SAE reads the activations it was trained on
-and the edit being scored is the edit the model receives. We executed a contract for one
-public pair before measuring anything.
-\begin{itemize}
-  \item \emph{Model and SAE:} GPT-2 small and the residual SAE at
-  \texttt{blocks.8.hook\_resid\_pre} ($d=768$, $m=24576$), both at pinned revisions.
-  \item \emph{Canonical path:} TransformerLens with every processing option passed
-  explicitly, and the SAE loaded through SAELens. \emph{Fast path:} the plain Hugging Face
-  model used by our adapter. Both receive the same token ids (BOS prepended, 128-token
-  windows).
-\end{itemize}
+We executed a model--SAE contract before measuring anything: GPT-2 small and the residual
+SAE at \texttt{blocks.8.hook\_resid\_pre} ($d=768$, $m=24576$) at pinned revisions, read
+through the canonical TransformerLens/SAELens path and through the plain Hugging Face model
+our adapter uses, on the same token ids (\cref{app:contract}).
 
 \begin{proposition}[Mean invariance, GPT-2 only]
 \label{prop:admissible}
@@ -307,73 +265,50 @@ the residual stream only through \texttt{ln\_1} and \texttt{ln\_2}, the unembedd
 it only through \texttt{ln\_f}, and each LayerNorm subtracts the mean over the $d$ model
 coordinates and divides by the standard deviation of the centred vector. Adding
 $c_t\mathbf{1}$ to the input of block $\ell$ at any set of positions $t$ leaves every logit
-unchanged. We do not claim this for other architectures; for example, RMSNorm does not
-subtract the mean, and there the statement is unproved and generally false.
+unchanged.
 \end{proposition}
-The proof is in \cref{app:proofs}. Two consequences shape the audit.
+This is a standard consequence of mean subtraction in LayerNorm, and the same property that
+lets TransformerLens centre writing weights; we state it only to fix its scope. We make no
+claim for other architectures: RMSNorm, for example, does not subtract the mean. The proof is
+in \cref{app:proofs}.
+
+\paragraph{Readouts.} The SAE was trained on $x = Ph$, where $h$ is the Hugging Face hidden
+state. The canonical readout $E(P(h+\delta)) - E(Ph)$ depends only on the class
+$\delta+\operatorname{span}(\mathbf{1})$. The raw off-slice readout $E(x+\delta) - E(x)$
+feeds the SAE an input outside $\operatorname{range}(P)$ whenever $\mathbf{1}^{\top}\delta\neq0$,
+and then depends on a component the model ignores. Linearizing the canonical readout gives
+$J_{\mathrm{eff}} = J_E(Ph)\,P$ with $J_{\mathrm{eff}}\mathbf{1} = 0$; the least-norm
+solution of $(MP)\delta = t$ lies in $\operatorname{range}(PM^{\top})\subseteq
+\operatorname{range}(P)$.
+
+\paragraph{What the checks show} (\cref{tab:coord}).
 \begin{itemize}
-  \item \emph{Canonical readout.} The SAE was trained with
-  \texttt{center\_writing\_weights}, so its input is $x = Ph$, where $h$ is the Hugging Face
-  hidden state. The canonical readout $E(P(h+\delta)) - E(Ph)$ depends only on the class
-  $\delta + \operatorname{span}(\mathbf{1})$. The \emph{raw off-slice} readout
-  $E(x+\delta) - E(x)$ feeds the SAE an input outside $\operatorname{range}(P)$ whenever
-  $\mathbf{1}^{\top}\delta\neq0$, and then depends on a component the model ignores. The two
-  coincide on $\operatorname{range}(P)$.
-  \item \emph{Effective Jacobian.} Linearizing the canonical readout gives
-  $J_{\mathrm{eff}} = J_E(Ph)\,P$, with $J_{\mathrm{eff}}\mathbf{1} = 0$. The least-norm
-  solution of $(MP)\delta = t$ lies in
-  $\operatorname{range}(PM^{\top})\subseteq\operatorname{range}(P)$ and spends no norm on
-  $\mathbf{1}$; the solution of $M\delta = t$ generally does.
+  \item \emph{Implementation parity.} In float64 our fast path matches the canonical path to
+  $10^{-13}$--$10^{-15}$ for activations, features and post-edit distributions. The
+  pre-registered float32 check fails its probability tolerance through rounding, amplified by
+  a common logit shift of up to \CxShift{} from \texttt{center\_unembed}; we keep that failure
+  and run everything in float64. Uncentred inputs give FVE \CxFVEUnc{} against \CxFVE.
+  \item \emph{Two readouts, two quantities.} A mean-only edit of norm \CxRho{} leaves the model
+  unchanged (KL \ClKLMax). Read raw, as the contract's K9 check did, it moves the SAE by
+  \ClRawMed{} times its norm; read canonically, by at most \ClCanonMax. We first described
+  the raw number as internal change without external effect. That reading is withdrawn: it
+  is an off-training-subspace stress test of the encoder, not a change of the model's
+  features. For unprojected decoder rows, whose mean component is only
+  \CxEightMeanMin--\CxEightMeanMax\% of their norm, the two readouts differ substantially
+  while the model's outputs agree to rounding. For every admissible edit of the pilot they
+  agree to \ClAdmMax, so no admissible result depends on the convention.
 \end{itemize}
 
-\paragraph{Contract execution.}
-\Cref{tab:contract-exec} lists the checks and tolerances fixed before execution.
-\begin{itemize}
-  \item \emph{float32 (pre-registered) fails.} Next-token probabilities of the two paths
-  differ by up to \CxFThreeTwoProb, above the $10^{-5}$ tolerance, and the mean-only edit
-  moves the distribution by a KL of up to \CxMeanKLThreeTwo, above its $10^{-8}$ bound. We
-  keep this failure.
-  \item \emph{float64 diagnostic passes.} A rerun designed after the float32 failure, with
-  the same tolerances, passes every check with differences of order $10^{-13}$ to
-  $10^{-15}$. The float32 discrepancies are rounding, amplified by a common logit shift of
-  up to \CxShift{} per position from \texttt{center\_unembed}; all real-model measurements
-  use float64.
-\end{itemize}
-
-\paragraph{Findings about coordinates.}
-\begin{itemize}
-  \item \emph{Centring matters.} The uncentred hidden state gives L0~\CxLZeroUnc{} and
-  FVE~\CxFVEUnc, against \CxLZero{} and \CxFVE{} in the training coordinates.
-  \item \emph{Unprojected edits make the readout convention-dependent.} A raw decoder row
-  has a mean component of only \CxEightMeanMin--\CxEightMeanMax\% of its norm, yet its raw
-  and canonical readouts differ by \CxEightMin--\CxEightMax{} times the edit's own readout
-  change, while the model's log-probabilities for the two representatives agree to
-  \ClLogitMax.
-  \item \emph{The mean-only ``drift'' is a raw off-slice readout (readout closure).} A
-  mean-only edit of norm \CxRho{} (10\% of the median residual norm) leaves the model
-  unchanged (KL at most \CxMeanKLSixFour). Read raw, as in the contract's K9 check, it
-  moves the SAE by \CxMeanDrift{} times its norm, which we first read as internal change
-  without external effect.
-  Recomputing the stored contract cases shows that this number is the raw readout
-  $E(x_0+\delta)$: we reproduce it to a relative \ClRawRepro, while the canonical readout
-  of the same edits is at most \ClCanonMax{} times the norm. On \ClGroups{} pilot test points
-  (\ClRows{} edits), raw and canonical readouts of every admissible edit agree to \ClAdmMax,
-  and the stored pilot values are reproduced exactly. The number is therefore an
-  off-training-subspace stress test of the encoder, which was never trained on inputs with
-  a $\mathbf{1}$ component, and a hazard of the raw convention. It is not a change of the
-  model's features.
-\end{itemize}
-
-\begin{table}[t]
-  \caption{Contract execution: canonical TransformerLens/SAELens path versus the fast path
-  (16 calibration windows; 96 admissible edits for K7). Tolerances were fixed before the
-  float32 run; the float64 run is a diagnostic with the same tolerances.}
-  \label{tab:contract-exec}
+\begin{table*}[t]
+  \caption{Raw off-slice versus canonical SAE readouts of the same edits, and what the model
+  sees (float64). Contract windows: the 8 stored K9 cases, recomputed. Pilot points: 16 test
+  points of the REAL-01R pilot, all stored values reproduced exactly. The full contract table
+  is \cref{tab:contract-exec}.}
+  \label{tab:coord}
   \centering
-  \scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \input{tables/tab_contract_exec.tex}
-\end{table}
+  \small
+  \input{tables/tab_coord.tex}
+\end{table*}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Admissible Feature Realization}
@@ -381,26 +316,15 @@ The proof is in \cref{app:proofs}. Two consequences shape the audit.
 
 \subsection{What linear algebra already fixes}
 \label{sec:analysis}
-Several facts are standard or elementary, and they decide which outcomes are forced.
-Formal statements are in \cref{app:facts} and proofs in \cref{app:proofs}. In the real
-model, $E$ stands for $EP$, the Jacobian of the canonical readout (\cref{sec:coord}).
-\begin{itemize}
-  \item \emph{Rescaling} fixes the target coordinate. It removes leakage on $Q$ only if
-  column $j$ of $ED$ restricted to $S\cup Q$ is a multiple of $e_j$ (\cref{prop:mismatch}).
-  \item \emph{A least-norm correction} $M^{+}t$ exists exactly when $t\perp\ker M^{\top}$.
-  Otherwise the residual certifies infeasibility; generic targets are infeasible once
-  $|S\cup Q|>\operatorname{rank}M$ (\cref{prop:feasible,cor:regimes}).
-  \item \emph{For ReLU}, with protected pre-activations held fixed, all remaining drift is
-  newly activated drift from inactive features that cross zero. A post-activation Jacobian
-  cannot activate an inactive target (\cref{prop:relu}).
-  \item \emph{JumpReLU and TopK} add range gaps and evictions. Their local derivatives are
-  not global inverses (\cref{prop:jump}).
-  \item \emph{Norm budgets} give a trust-region problem with a ridge solution
-  (\cref{prop:tr}).
-  \item \emph{Cost.} For same-layer edits the constraint matrix is just the gathered
-  encoder rows. Matrix-free solvers matter only for downstream readouts
-  \citep{paige1982lsqr}.
-\end{itemize}
+Several standard facts decide which outcomes are forced (statements in \cref{app:facts},
+proofs in \cref{app:proofs}); in the real model $E$ stands for $EP$, the Jacobian of the
+canonical readout. Rescaling fixes the target coordinate but removes leakage on $Q$ only if
+column $j$ of $ED$ restricted to $S\cup Q$ is a multiple of $e_j$ (\cref{prop:mismatch}). A
+least-norm correction $M^{+}t$ exists exactly when $t\perp\ker M^{\top}$; otherwise the
+residual certifies infeasibility (\cref{prop:feasible}). For ReLU, holding protected
+pre-activations fixed leaves only newly activated drift, and a post-activation Jacobian
+cannot activate an inactive target (\cref{prop:relu}); JumpReLU and TopK add range gaps and
+evictions (\cref{prop:jump}); norm budgets give a ridge solution (\cref{prop:tr}).
 
 \subsection{Real-model pilot}
 \label{sec:pilot}
@@ -418,81 +342,46 @@ the edit, for 2 documents per feature and target type. The unit is the test docu
 \PilotRows{} rows from \PilotDocs{} documents; the median \LN{} solve took
 \PilotSolveMs\,ms.
 
-\paragraph{Results.}
-\Cref{tab:pilot} reports the $q_{99}$ dose.
-\begin{itemize}
-  \item \emph{Decoder.} For active targets, the target-matched decoder edit leaves
-  $D_{\mathrm{orig}} = \PilotOrigDec\alpha$ and $D_{\mathrm{all}} = \PilotAllDec\alpha$.
-  The weight-only rescaled decoder is identical here, because pre-activations are affine.
-  For inactive targets it misses the target (error \PilotRescInactTgt).
-  \item \emph{\LN{} correction.} It removes $D_{\mathrm{orig}}$ by construction. What
-  remains is newly activated drift, $D_{\mathrm{all}} = \PilotAllLn\alpha$ against
-  \PilotAllDec$\alpha$ for the decoder.
-  \item \emph{Per-document paired differences} (\LN{} minus decoder, active targets):
-    \begin{itemize}
-      \item $\Delta D_{\mathrm{all}} = \PilotDAllAct$;
-      \item $\Delta D_{\mathrm{new}} = \PilotDNewAct$;
-      \item $\Delta\mathrm{KL} = \PilotDKLAct$ nats.
-    \end{itemize}
-    For active targets the same signs hold at every dose (\cref{tab:pilot-paired}). For
-    inactive targets, $\Delta D_{\mathrm{all}}$ and $\Delta$KL are negative at every dose,
-    but the $\Delta D_{\mathrm{new}}$ intervals include zero at $q_{50}$ and $q_{90}$.
-  \item \emph{Norm and encoder row.} The \LN{} edit has a smaller norm than the decoder edit
-  (\PilotNormLn{} against \PilotNormDec) and is only slightly larger than the encoder-row
-  edit (difference \PilotLnEncNorm). Against the encoder row, it lowers
-  $D_{\mathrm{all}}$ by \PilotLnEncAll, with a KL difference of \PilotLnEncKL.
-  \item \emph{Controls.} Random directions could not reach the target in \PilotRandInf{} of
-  \PilotRandTotal{} target-matched rows, which are kept as infeasible (\cref{sec:denominators}).
-  The stored mean-only rows use the raw off-slice readout. Canonically a mean-only edit
-  changes no feature (\cref{sec:coord}), so it has no target-matched row and is excluded
-  from every table and ranking.
-\end{itemize}
-\Cref{fig:pilot-dose} shows the dose dependence. These are internal measurements, and
-\cref{sec:external} explains why they do not show external benefit.
+\paragraph{Results} (\cref{tab:pilot}). For active targets the target-matched decoder
+edit leaves $D_{\mathrm{orig}} = \PilotOrigDec\alpha$ and $D_{\mathrm{all}} =
+\PilotAllDec\alpha$; the weight-only rescaled decoder is identical because pre-activations
+are affine. The \LN{} correction removes $D_{\mathrm{orig}}$ by construction and leaves only
+newly activated drift, $D_{\mathrm{all}} = \PilotAllLn\alpha$, with a smaller edit norm
+(\PilotNormLn{} against \PilotNormDec). Per document (\LN{} minus decoder, active targets,
+$q_{99}$), $\Delta D_{\mathrm{all}} = \PilotDAllAct$, $\Delta D_{\mathrm{new}} =
+\PilotDNewAct$ and $\Delta\mathrm{KL} = \PilotDKLAct$ nats; the signs hold at every dose
+(\cref{tab:pilot-paired}, \cref{fig:pilot-dose}). For inactive targets $\Delta D_{\mathrm{all}}$ and $\Delta$KL are
+negative at every dose, but the $\Delta D_{\mathrm{new}}$ intervals include zero at
+$q_{50}$ and $q_{90}$. Against the encoder row, \LN{} lowers $D_{\mathrm{all}}$ by
+\PilotLnEncAll{} at nearly the same norm.
+
+\paragraph{Denominators.} Re-aggregating the stored rows with a target tolerance of
+$10^{-6}$ fixed before the tables were produced shows that decoder, encoder row and \LN{} are
+matched at every test point and dose (largest error \RgTgtErrMax, float32 rounding of the
+stored reference), so their comparison uses the full common denominator. Random directions
+are infeasible at \RgSecExclMin--\RgSecExclMax{} of points and are never ranked. One earlier
+descriptive gate readout (G1) pooled matched active-target rows (\RgGOneAct) with unmatched
+inactive-target rows (\RgGOneInact); its side is unchanged. The gate's minimum-unit rule and
+a target-gain metric were added while the pilot's test run was executing and are labelled
+in-run amendments. Each pilot feature's $q_{99}$ rests on \RgNPosMin--\RgNPosMax{} positive
+calibration activations, so for \RgTopTwo{} features it is effectively a top order
+statistic; we keep the frozen doses. These are internal measurements; \cref{sec:external}
+explains why they do not show external benefit.
 
 \begin{table*}[t]
-  \caption{Real-model pilot (GPT-2 small, residual SAE at layer 8, float64). Target-matched
-  edits at dose $q_{99}$; medians over test documents. Drift is relative to $\alpha$. KL is
-  over the 16 positions after the edit (2 documents per feature and target type), with
-  $n_{\mathrm{doc}}$ given for drift. All target-matched methods reach the target (error
-  below $10^{-7}$) except the weight-only rescaled decoder for inactive targets. Mean-only
-  rows are omitted (raw off-slice readout; \cref{sec:coord}). Document-cluster 95\%
-  intervals are in \cref{tab:pilot-ci}.}
+  \caption{Target-matched fidelity with its full denominator (REAL-01R pilot, dose $q_{99}$,
+  float64; medians over test documents). ``Matched'': test points whose target error is at
+  most $10^{-6}$, out of all test points; drift for a row with fewer matched points is over
+  its feasible or deployed rows only, and the inactive rescaled row misses the target
+  (error \RgRescInactErr) and is not comparable. Drift is relative to $\alpha$; KL is over
+  the 16 positions after the edit (2 documents per feature and target type). Mean-only rows
+  exist only under the raw readout and are omitted. Intervals: \cref{tab:pilot-ci}; status
+  counts: \cref{tab:denominators}.}
   \label{tab:pilot}
   \centering
   \small
   \input{tables/tab_pilot_matched_median.tex}
 \end{table*}
-
-\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}
-    \begin{groupplot}[
-        group style={group size=2 by 1, horizontal sep=0.9cm},
-        width=0.58\columnwidth, height=3.6cm,
-        xtick={0,1,2,3}, xticklabels={$q_{50}$,$q_{90}$,$q_{99}$,$2q_{99}$},
-        ymode=log, grid=major, tick label style={font=\scriptsize},
-        label style={font=\scriptsize}, title style={font=\scriptsize}]
-      \nextgroupplot[title={active target}, ylabel={median drift / $\alpha$},
-        legend to name=pilotleg, legend columns=3, legend style={font=\scriptsize}]
-      \addplot[black, thick, mark=o] table[x=dose_idx, y=active_decoder_all] {figures/pilot_dose.dat};
-      \addlegendentry{decoder: $D_{\mathrm{all}}$}
-      \addplot[black, densely dotted, mark=o] table[x=dose_idx, y=active_decoder_new] {figures/pilot_dose.dat};
-      \addlegendentry{decoder: $D_{\mathrm{new}}$}
-      \addplot[blue, thick, mark=square*] table[x=dose_idx, y=active_jacobian_ln_all] {figures/pilot_dose.dat};
-      \addlegendentry{\LN: $D_{\mathrm{all}}{=}D_{\mathrm{new}}$}
-      \nextgroupplot[title={inactive target}]
-      \addplot[black, thick, mark=o] table[x=dose_idx, y=inactive_decoder_all] {figures/pilot_dose.dat};
-      \addplot[black, densely dotted, mark=o] table[x=dose_idx, y=inactive_decoder_new] {figures/pilot_dose.dat};
-      \addplot[blue, thick, mark=square*] table[x=dose_idx, y=inactive_jacobian_ln_all] {figures/pilot_dose.dat};
-    \end{groupplot}
-  \end{tikzpicture}
-  \\ \ref{pilotleg}
-  \caption{Pilot: drift versus calibration dose (target-matched; medians over test
-  documents). The \LN{} correction has no originally-active drift, so all of its drift is
-  newly activated.}
-  \label{fig:pilot-dose}
-\end{figure}
 
 \subsection{When the correction redistributes drift}
 \label{sec:redistribution}
@@ -512,77 +401,33 @@ axis (\cref{app:toy}). All \FeasTotalPass/\FeasTotal{} feasibility checks and ve
 identities passed (\cref{tab:feas}); they show that the code is correct and are not findings.
 Every number below is re-aggregated from the raw files.
 
-\paragraph{Linear regimes (toy): rescaling versus interference.}
+\paragraph{Linear regimes (toy).}
 \label{sec:linear}
-\Cref{tab:linear} (\cref{app:tables}) places seven linear regimes into the classes predicted by
-\cref{prop:mismatch,prop:feasible}. A class is assigned only if it holds in all 20
-instances.
-\begin{itemize}
-  \item \emph{R0} has no mismatch, yet the encoder-row edit leaks \EncGradLeakRzero.
-  \emph{R1} is a pure scale error (decoder target error \RoneDecTgt), which rescaling fixes.
-  \item \emph{R2} is pure interference. The leakage is \RtwoDecLeak{} $= 0.3\sqrt7$, and
-  rescaling cannot change it. The \LN{} correction removes it at norm ratio \RtwoLnNorm{}
-  $=\sqrt{(G^{-1})_{jj}}$. At the decoder's norm, the trust region reaches target error
-  \RtwoTrTgt{} with leakage \RtwoTrLeak.
-  \item \emph{R4a} protects all 47 non-targets with $d=16$ and is infeasible (median
-  relative residual \RfouraRes; every row at least \RfouraResRowMin). The least-squares
-  solution gives up the target (error \RfouraLnTgt).
-  \item \emph{R4b and R5} protect 7 features. This zeroes their drift but \emph{raises}
-  total leakage. In R4b it goes from \RfourbDecLeak{} to \RfourbLnLeak{} at norm ratio
-  \RfourbLnNorm. In R5 it goes from \RfiveRescLeak{} (rescaled) to \RfiveLnLeak{} (\LN).
-\end{itemize}
+Seven linear regimes fall into the classes that \cref{prop:mismatch,prop:feasible} predict in
+all 20 instances (\cref{tab:linear}). Rescaling fixes pure scale errors but not
+interference; the \LN{} correction removes interference at a larger norm; protecting all
+non-targets with $|S\cup Q|>d$ is infeasible, and protecting a subset can \emph{raise}
+total leakage (R4b: \RfourbDecLeak{} to \RfourbLnLeak).
 
-
-\paragraph{Active sets and norm budgets (toy, pre-registered).}
+\paragraph{Dense active sets (toy, pre-registered).}
 \label{sec:activeset}
-This setting has $d=16$ and $m=64$, an encoder halfway between tied and biorthogonal, and
-base points built from three decoder atoms. The median number of active features is
-\DenseReluActMed{} (range \DenseReluActMin--\DenseReluActMax) for ReLU and
-\DenseJumpActMed{} for JumpReLU. This is dense: $|S\cup Q|$ is a large fraction of $d$.
-\Cref{tab:relu} (\cref{app:tables}) gives the ReLU decomposition.
-
-The \LN{} correction removes most originally active drift. Newly activated drift grows,
-however, because the correction's larger norm pushes inactive features over threshold.
-Its total drift was lower than the rescaled decoder's in \DenseReluActQWins,
+With $d=16$, $m=64$ and a median of \DenseReluActMed{} active ReLU features, the \LN{}
+correction removes most originally active drift, but its larger norm pushes inactive features
+over threshold. Its total drift beat the rescaled decoder's in only \DenseReluActQWins,
 \DenseReluActOneWins{} and \DenseReluActFourWins{} instances for active targets at
-$\alpha = 0.25, 1, 4$, and in \DenseReluInactQWins, \DenseReluInactOneWins{} and
-\DenseReluInactFourWins{} for inactive targets.
-
-Bounded repair reached a crossing-free edit in \RepairConvRJMin--\RepairConvRJMax{} of
-\RepairRowsPerCell{} rows per ReLU or JumpReLU cell, but it did so by abandoning the target:
-median target error \RepairTgtMin--\RepairTgtMax{} over range-feasible cells. For TopK it
-converged in only \RepairConvTKMin--\RepairConvTKMax{} of \RepairRowsPerCell{} rows per cell,
-because eviction is rank-based (\cref{prop:jump}). As \cref{prop:relu} predicts, the naive
-post-activation Jacobian never moved an inactive target. With JumpReLU, an inactive target
-at $\alpha = 0.25<\theta = 0.3$ was unattainable for every method.
-
-At the decoder's norm, the trust region had lower combined error than the decoder in
-\TrWinsMin--\TrWinsMax{} of 20 instances per ReLU/JumpReLU cell (\cref{tab:budget}). This
-comparison is circular: the trust region minimizes the same internal quantity it is scored
-on.
-
+$\alpha = 0.25, 1, 4$ (\cref{tab:relu}). Bounded repair reached crossing-free edits only by
+abandoning the target (median target error \RepairTgtMin--\RepairTgtMax), and a
+post-activation Jacobian never moved an inactive target (\cref{prop:relu}).
 
 \paragraph{Sparser active sets (toy, exploratory).}
 \label{sec:sparse}
-This subsection is exploratory. The axis was added after inspecting development seeds,
-so it should not be read as confirmation.
-
-Changing only the ReLU bias lowers the median active count to \SparseFiftyActMed{}
-(bias $-0.5$) and \SparseSeventyFiveActMed{} (bias $-0.75$). \Cref{fig:alpha} and
-\cref{tab:sparse} show the effect.
-\begin{itemize}
-  \item With bias $-0.75$, the \LN{} correction had lower total drift than rescaling in
-  \SparseSeventyFiveActQWins, \SparseSeventyFiveActOneWins{} and
-  \SparseSeventyFiveActFourWins{} instances for active targets.
-  \item With bias $-0.5$, it was lower in \SparseFiftyActQWins{} and \SparseFiftyActOneWins{}
-  instances at $\alpha\le1$, but only \SparseFiftyActFourWins{} at $\alpha = 4$.
-\end{itemize}
-In every panel of \cref{fig:alpha}, the drift that remains after the \LN{} correction is
-almost entirely newly activated drift.
-
-Our reading, which is a hypothesis about real SAEs and not a finding: a local correction
-helps only when the protected set is small relative to $d$ \emph{and} the edit is small
-enough that few inactive features cross threshold.
+An axis added after inspecting development seeds lowers the median active count to
+\SparseSeventyFiveActMed{} (ReLU bias $-0.75$). There the \LN{} correction had lower total
+drift in \SparseSeventyFiveActQWins, \SparseSeventyFiveActOneWins{} and
+\SparseSeventyFiveActFourWins{} instances (\cref{fig:alpha}); at bias $-0.5$ it won at
+$\alpha\le1$ but only \SparseFiftyActFourWins{} at $\alpha=4$. Our reading, a hypothesis and
+not a finding: a local correction helps only when the protected set is small relative to $d$
+and few inactive features cross threshold.
 
 \begin{figure*}[t]
   \centering
@@ -641,58 +486,6 @@ families are needed before any regime claim. \todo{P3-REAL-01R-FULL: all 64 cali
 features, same frozen doses, same document-paired analysis}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Matched-Denominator Robustness}
-\label{sec:denominators}
-A target-matched comparison is only as good as its denominator. We re-aggregated the stored
-pilot rows (no rerun) with rules fixed in the aggregation script before its tables were
-produced: a row is matched if its status is OK and its target error is at most $10^{-6}$;
-unmatched and infeasible rows are counted, never dropped or pooled
-(\cref{tab:denominators}).
-\begin{itemize}
-  \item \emph{Primary methods share one denominator.} Decoder, encoder row and \LN{} are
-  matched at every test point and dose (largest target error \RgTgtErrMax, float32 rounding of
-  the stored reference), so the comparisons of \cref{sec:pilot} use all test points
-  (exclusion \RgPrimExclMax).
-  \item \emph{Random directions lose half.} No non-negative scale reaches the target for
-  \RgSecExclMin--\RgSecExclMax{} of test points per dose and target type. Adding random to
-  the intersection would halve the sample, so it is summarized only on its own feasible rows
-  and never ranked against the others.
-  \item \emph{Unmatched baselines stay separate.} The weight-only rescaled decoder lands on
-  the target in all \RgRescActWithin{} active-target rows, because pre-activations are affine,
-  and in \RgRescInactWithin{} inactive-target rows (median error \RgRescInactErr{} at
-  $q_{99}$). The plain decoder $\alpha D_j$ is never matched.
-  \item \emph{Mean-only rows exist only under the raw readout.} All \RgRawOnly{} of them
-  are excluded.
-  \item \emph{One earlier readout mixed denominators.} Gate G1 (rescaled originally-active
-  drift at $q_{99}$) pooled both target types: \RgGOneAsRun{} over 54 documents. Split, it
-  is \RgGOneAct{} for active targets (matched, $n=\RgGOneActN$) and \RgGOneInact{} for
-  inactive targets (unmatched, $n=\RgGOneInactN$). Both lie above $0.1\alpha$, so the
-  readout's side is unchanged, but the pooled number is not a matched quantity.
-  \item \emph{In-run amendments.} The rule that a gate readout needs at least 10 documents
-  and the derived target-gain metric were committed while the pilot's test run was
-  executing, after its configuration was frozen and before any test row existed on disk. We
-  label both as in-run amendments. Target gain is no longer used in the body: its headline
-  value came from the raw mean-only readout.
-  \item \emph{Effective calibration counts.} Each pilot feature's $q_{99}$ is a quantile of
-  \RgNPosMin--\RgNPosMax{} positive calibration activations. For \RgTopTwo{} of the
-  \PilotFeatures{} features there are at most 101, so $q_{99}$ lies between the two largest
-  values and is effectively a top order statistic. Of all 64 calibration features,
-  \RgAllBelowHundred{} have fewer than 100 positives (minimum \RgAllNPosMin). We keep the
-  frozen $q_{99}$ and do not switch doses after the fact.
-\end{itemize}
-
-\begin{table}[t]
-  \caption{Pilot row status by method (target-matched mode, all four doses, active and
-  inactive targets). ``Raw-only'': rows that exist only under the raw off-slice readout.
-  ``Docs'': largest number of test documents in one dose and target-type cell.}
-  \label{tab:denominators}
-  \centering
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \input{tables/tab_matched_denominators.tex}
-\end{table}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Lexical Change and Quality}
 \label{sec:external}
 
@@ -714,39 +507,51 @@ and is unchanged when both are noisy (better in \TxBothWins). These outcomes are
 construction: the internal metric measures agreement with the encoder. Behavior can also
 change while SAE readouts are held fixed \citep{cui2026sae}.
 
-\subsection{Lexical pilot: blocked at calibration}
+\subsection{Space-lexicon pilot}
 \label{sec:real02}
-We froze one limited behavioral test (P3-REAL-02-LX, \cref{app:real02}) before calibration.
-\begin{itemize}
-  \item \emph{Design.} At most 32 held-out WikiText-103 articles, one keyword-free prompt
-  each, greedy decoding of 32 tokens, and the edit at every position. The methods are the
-  projected decoder, the projected encoder row, the \LN{} correction ($J_EP$) and projected
-  DiffMean, each at the largest norm budget whose calibration KL on the common prompt is at
-  most $0.1$ nats, plus no edit. The mean-only control runs at one fixed amplitude outside
-  every ranking.
-  \item \emph{Metric.} \emph{Wedding-lexicon occurrence}: whether the continuation contains
-  an ActAdd keyword \citep{turner2024steering}, and hits per generated token. This is a
-  lexical proxy. The lexicon also selects the feature and the DiffMean direction, so the
-  metric is not independent of direction selection.
-\end{itemize}
-\emph{Outcome.} Choosing the feature and DiffMean needs at least 20 calibration windows that
-contain a keyword. With the frozen cap of 8 windows per article, \LxHitsVOne{} qualified and
-the stage returned \textsc{blocked}. We kept that record. Before reading any test document,
-we committed one amendment: scan every calibration window, with a second
-\textsc{blocked} ending the experiment. All \LxWindowsAll{} windows then gave
-\LxHitsVOneOne. P3-REAL-02-LX is therefore \textsc{blocked}. No feature was chosen, no test
-document was read, no text was generated, and no lexical, KL or NLL number exists. We did not
-lower the minimum after seeing the count.
-Unblocking it needs a new frozen protocol: either calibration text with more topic support,
-which means new data and a download approval, or a topic that WikiText supports. Separately,
-the adapter was checked on a synthetic prompt. Greedy decoding matches the library's
-\texttt{generate}, cached \LN{} directions equal recomputation, actor edits have mean
-component below $10^{-12}$, and the mean-only control leaves the continuation unchanged.
-\todo{P3-REAL-02-LX: held-out wedding-lexicon occurrence and its KL/NLL tradeoff; blocked
-at calibration, needs a new frozen protocol}
-\todo{P3-REAL-02-SEM: an independent semantic evaluation of the same continuations}.
+\paragraph{Design.} One behavioral pilot was frozen before any corpus count
+(\cref{app:real02}). The metric is \emph{space-lexicon occurrence}: whether 32 greedy tokens
+contain a word from the 18-word space list of PPLM \citep{dathathri2020plug}, matched as whole
+lowercased words. The topic was fixed in advance, not chosen by comparing topics; an
+earlier wedding lexicon was closed because its calibration support was too small. The same
+lexicon selects the SAE feature and the DiffMean direction, so this is a supervised lexical
+objective and not an independent semantic check. Support was \SpPosWin{} of \SpWin{}
+calibration windows in \SpPosDocs{} of \SpCalDocs{} articles (minimum 20 windows), and
+\SpStarWin{} of those windows contain the polysemous ``star''. Every actor, feature
+\SpFeature{}, received the same KL-capped budget of $0.1\times$ the median norm
+($\kappa = \SpKappa$ nats). All \SpAttempted{} test articles attempted gave a prompt, and no
+row failed. \SpOverlapPilot{} of them had served as edit sites in the internal pilot, so they
+are held out from calibration but not unseen by this project.
 
-This paper therefore contains no behavioral evidence for or against the correction.
+\paragraph{Result} (\cref{tab:space}). Without an edit, \SpBoth{} of \SpDocs{} continuations
+contains a list word: ``All-Star'' matches ``star'' under the fixed rules. The decoder,
+encoder-row and \LN{} edits gave exactly that outcome on every article. The primary
+difference, \LN{} minus decoder in any-hit, is therefore \SpPrim{} percentage points with
+\SpDiscA{} and \SpDiscB{} discordant articles. Its bootstrap interval degenerates to
+$[\SpPrimLo, \SpPrimHi]$, and an exact 95\% bound still allows a discordance rate of up to
+\SpBound\%. The comparison is \SpVerdict; this is not evidence of equivalence. DiffMean
+gained \SpDmGain{} articles and lost \SpDmLoss{} (\cref{tab:space-paired}). The edits were not
+inert. Descriptively and post hoc, the greedy continuation changed in \SpChangedEnc--\SpChangedDm{}
+of 32 articles, and the canonical target change at prompt positions was \SpDajDec{}
+(decoder), \SpDajEnc{} (encoder row) and \SpDajLn{} (\LN). \LN{} had the lowest non-target drift
+(\SpDallLn{} against \SpDallDec{} for the decoder) and the lowest test KL (\SpKLLn{} against
+\SpKLDec). None of this moved lexicon occurrence. The mean-only control reproduced every
+unedited continuation (\SpCtrlSame). At this KL cap, feature edits change internal readouts
+and surface text but not space-lexicon occurrence, and the pilot cannot separate \LN{} from
+the decoder. \todo{P3-REAL-02-SEM: an independent semantic evaluation; not run}
+
+\begin{table*}[t]
+  \caption{Space-lexicon pilot (\SpDocs{} held-out WikiText-103 articles, one prompt each,
+  32 greedy tokens, edit at every position, float64). Budget: calibration-selected multiple
+  of the median centred norm $\bar r = \SpMedNorm$ under $\kappa = \SpKappa$ nats. KL is
+  teacher-forced on the common prompt; NLL is that of the continuation under the unedited
+  model; $\Delta a_j$ is the canonical target change at prompt positions. Any hit: mean over
+  articles with a 95\% document-bootstrap interval. A lexical proxy, not semantic success.}
+  \label{tab:space}
+  \centering
+  \small
+  \input{tables/tab_space.tex}
+\end{table*}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Limitations}
@@ -766,8 +571,11 @@ This paper therefore contains no behavioral evidence for or against the correcti
   \item \emph{Toy results are small and largely forced}; the sparse axis is exploratory.
   \item \emph{Internal numbers are internal.} KL and $\Delta$NLL measure total output change,
   not success.
-  \item \emph{The behavioral metric is lexical,} and the lexicon also chose the steered
-  feature and the DiffMean direction. Semantic success is \notrun.
+  \item \emph{The behavioral pilot is small and lexical.} It has 32 articles and one feature,
+  and hits are rare (1 of 32 without an edit, from a polysemous word), so it cannot detect
+  modest differences. The lexicon also chose the steered feature and the DiffMean
+  direction. The KL cap limited every actor to $0.1\times$ the median norm, and larger
+  budgets were not tested. Semantic success is \notrun.
   \item \emph{Other choices.} The Euclidean norm is a modeling choice
   \citep{park2024linear}. JumpReLU and TopK families \citep{lieberum2024gemma} add the
   boundary effects of \cref{prop:jump} and are not covered.
@@ -775,19 +583,14 @@ This paper therefore contains no behavioral evidence for or against the correcti
 
 \section{Conclusion}
 \label{sec:conclusion}
-Auditing an SAE edit starts with the readout. For GPT-2 small and the layer-8 residual SAE,
-the SAE's inputs live in $\operatorname{range}(P)$. Reading an edit raw, as $E(x+\delta)$,
-can report large feature changes for edits the model cannot see; the canonical readout
-$E(P(h+\delta))$ removes them. With that fixed, and with edits restricted to model-visible
-directions, a conditional same-layer pilot shows the following:
-\begin{itemize}
-  \item projected decoder edits leave substantial drift on other features;
-  \item a least-norm correction with $J_E(Ph)P$ lowers that drift on a common denominator of
-  test points, whereas in a dense toy regime it moves drift onto newly activated features.
-\end{itemize}
-None of this is evidence of external control. The one behavioral test we froze, a lexical
-proxy, was blocked at calibration for lack of topic text, so whether the correction changes
-behavior, lexically or semantically, remains open.
+For GPT-2 small and its layer-8 residual SAE, an edit's feature change should be read
+canonically, because the raw readout reports large changes for edits the model cannot see.
+With that fixed and edits restricted to model-visible directions, a least-norm correction
+lowers same-layer drift relative to the projected decoder in a conditional pilot, whereas in
+a dense toy regime it moves drift onto newly activated features. In a pre-registered lexical
+pilot, the lower internal drift did not change space-lexicon occurrence at a KL cap of 0.1
+nats. Whether cleaner feature edits steer behavior, lexically at larger budgets or
+semantically, remains open.
 
 \section*{Impact Statement}
 This work concerns the reliability of interpretability-based interventions, which are
@@ -1090,6 +893,17 @@ All of these ran single-threaded on a CPU.
 \section{Model--SAE Contract}
 \label{app:contract}
 \begin{table}[h]
+  \caption{Contract execution: canonical TransformerLens/SAELens path versus the fast path
+  (16 calibration windows; 96 admissible edits for K7). Tolerances were fixed before the
+  float32 run; the float64 run is a diagnostic with the same tolerances.}
+  \label{tab:contract-exec}
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{2.5pt}
+  \input{tables/tab_contract_exec.tex}
+\end{table}
+
+\begin{table}[h]
   \caption{Contract fields, sources and status after execution. ``Verified'' means read from
   the pinned source file or code; ``executed'' means checked by running both paths
   (\cref{tab:contract-exec}).}
@@ -1118,6 +932,47 @@ All of these ran single-threaded on a CPU.
 
 \section{Real-Model Pilot Details}
 \label{app:pilot}
+\begin{table}[h]
+  \caption{Pilot row status by method (target-matched mode, all four doses, active and
+  inactive targets). ``Raw-only'': rows that exist only under the raw off-slice readout.
+  ``Docs'': largest number of test documents in one dose and target-type cell.}
+  \label{tab:denominators}
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \input{tables/tab_matched_denominators.tex}
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+        group style={group size=2 by 1, horizontal sep=0.9cm},
+        width=0.58\columnwidth, height=3.6cm,
+        xtick={0,1,2,3}, xticklabels={$q_{50}$,$q_{90}$,$q_{99}$,$2q_{99}$},
+        ymode=log, grid=major, tick label style={font=\scriptsize},
+        label style={font=\scriptsize}, title style={font=\scriptsize}]
+      \nextgroupplot[title={active target}, ylabel={median drift / $\alpha$},
+        legend to name=pilotleg, legend columns=3, legend style={font=\scriptsize}]
+      \addplot[black, thick, mark=o] table[x=dose_idx, y=active_decoder_all] {figures/pilot_dose.dat};
+      \addlegendentry{decoder: $D_{\mathrm{all}}$}
+      \addplot[black, densely dotted, mark=o] table[x=dose_idx, y=active_decoder_new] {figures/pilot_dose.dat};
+      \addlegendentry{decoder: $D_{\mathrm{new}}$}
+      \addplot[blue, thick, mark=square*] table[x=dose_idx, y=active_jacobian_ln_all] {figures/pilot_dose.dat};
+      \addlegendentry{\LN: $D_{\mathrm{all}}{=}D_{\mathrm{new}}$}
+      \nextgroupplot[title={inactive target}]
+      \addplot[black, thick, mark=o] table[x=dose_idx, y=inactive_decoder_all] {figures/pilot_dose.dat};
+      \addplot[black, densely dotted, mark=o] table[x=dose_idx, y=inactive_decoder_new] {figures/pilot_dose.dat};
+      \addplot[blue, thick, mark=square*] table[x=dose_idx, y=inactive_jacobian_ln_all] {figures/pilot_dose.dat};
+    \end{groupplot}
+  \end{tikzpicture}
+  \\ \ref{pilotleg}
+  \caption{Pilot: drift versus calibration dose (target-matched; medians over test
+  documents). The \LN{} correction has no originally-active drift, so all of its drift is
+  newly activated.}
+  \label{fig:pilot-dose}
+\end{figure}
+
 \paragraph{Frozen choices.} All of the following were fixed from calibration documents only
 and frozen, with a hash recorded, before any test document was read:
 \begin{itemize}
@@ -1144,7 +999,7 @@ amendments}, not pre-registered:
 $q_{99}$ with document-cluster intervals, and all three fell on the continue side:
 \begin{itemize}
   \item G1: rescaled originally-active drift is above $0.1\alpha$. As run, it pools matched
-  (active) and unmatched (inactive) rows; the split is in \cref{sec:denominators};
+  (active) and unmatched (inactive) rows; the split is in \cref{sec:pilot};
   \item G2: newly activated drift is below originally-active drift;
   \item G3: the correction lowers total drift.
 \end{itemize}
@@ -1172,7 +1027,7 @@ The pilot configuration declares these readouts descriptive, not decisions.
 \begin{table}[h]
   \caption{Pilot, equal norm ($\rho = 0.1\times$ median residual norm). ``Target gain'' is the
   target-feature change per unit edit norm, a metric added as an in-run amendment
-  (\cref{sec:denominators}). Mean-only rows are omitted (raw off-slice readout).}
+  (\cref{sec:pilot}). Mean-only rows are omitted (raw off-slice readout).}
   \label{tab:pilot-eq}
   \centering
   \scriptsize
@@ -1210,41 +1065,61 @@ memory: environment check, contract, calibration, timing smoke on calibration do
 only, run, and summary. All six stages ran for the pilot (\cref{app:pilot}); the full run over all 64
 calibration features is \notrun.
 
-\section{P3-REAL-02-LX Protocol}
+\section{Lexical Pilots: Protocols and Operational Records}
 \label{app:real02}
-The configuration was committed before the calibration stage and before any test document
-was read.
+\begin{table*}[h]
+  \caption{Space-lexicon pilot, paired per article (mean differences with 95\% document-bootstrap
+  intervals; only the first row is confirmatory). ``$a$ only / $b$ only'': discordant articles
+  for the primary pair.}
+  \label{tab:space-paired}
+  \centering
+  \small
+  \input{tables/tab_space_paired.tex}
+\end{table*}
+
+\paragraph{Closed branch: wedding lexicon (P3-REAL-02-LX).} The ActAdd keyword list
+\citep{turner2024steering} was frozen with the protocol below. Selecting the feature and the
+DiffMean direction requires at least 20 calibration windows that contain a keyword. With the
+frozen cap of 8 windows per article, \LxHitsVOne{} qualified and the stage returned
+\textsc{blocked} (\LxCalSecVOne\,s). One amendment was committed before any test document was
+read: scan every calibration window, with a second \textsc{blocked} ending the branch. All
+\LxWindowsAll{} windows then gave \LxHitsVOneOne{} (\LxCalSecVOneOne\,s). The branch is
+closed: no test document was read and nothing was generated. This measures the lexicon's
+support in WikiText, not a steering failure, and the minimum was not lowered.
+
+\paragraph{P3-REAL-02-SPACE protocol.} A new configuration was committed before any corpus
+count, feature forward or generation. It differs from the wedding protocol (after its
+amendment) only in the following:
 \begin{itemize}
-  \item \emph{Metric.} Wedding-lexicon occurrence in the 32 generated tokens (prompt
-  excluded), using the ActAdd keyword list \citep{turner2024steering}: \emph{wedding,
-  weddings, wed, marry, married, marriage, bride, groom, honeymoon}. We report the share of
-  documents with at least one hit and the hits per generated token.
-  \item \emph{Calibration only (WikiText-103 validation).} The feature is the one with the
-  largest activation difference between windows with and without keywords, and the
-  DiffMean direction is the difference of mean centred hook states. The lexicon is thus used
-  in direction selection. Each method's norm budget is the largest of
-  $\{0.05, 0.1, 0.2, 0.4, 0.8\}$ times the median centred norm whose mean teacher-forced
-  KL$(P_{\mathrm{base}}\,\|\,P_{\mathrm{edit}})$ on 32 calibration prompts is at most
-  $\kappa = 0.1$ nats; a method with no such budget is \notrun, not substituted.
-  \item \emph{Methods.} Projected decoder $PD_j$, projected encoder row $PE_j^{\top}$,
-  per-position \LN{} correction ($J_EP$), projected DiffMean, and no edit. Random directions,
-  SAE-TS and FGAA are \notrun. The mean-only control runs at the largest budget, outside
-  every ranking.
-  \item \emph{Test.} Test articles sorted by identifier and shuffled with a fixed seed; the
-  first 32 (or fewer, by a cost rule fixed in advance) with a keyword-free window give one
-  prompt each (BOS plus 31 tokens). Greedy decoding (temperature 0, no sampling), 32 new
-  tokens, edit at every position, no KV cache.
-  \item \emph{Quality.} KL on the common prompt (teacher forced, averaged over positions) and
-  the continuation's NLL under the unedited model. Internal: canonical target change and
-  non-target drift at prompt positions, never used as the label.
-  \item \emph{Analysis.} The unit is the test document; means over documents with
-  document-bootstrap 95\% intervals. The method claim is supported only if \LN{} beats
-  decoder, encoder row and DiffMean with intervals excluding zero.
-  \item \emph{Amendment v1.1.} The first calibration (windows capped at 8 per document) found
-  only 5 keyword windows, below the pre-set minimum of 20, and returned \textsc{blocked}. We
-  kept that record and committed one amendment before reading any test document: scan every
-  calibration window, everything else unchanged; a second \textsc{blocked} would have ended
-  the experiment.
+  \item the topic, set by instruction rather than by searching topics: the 18-word space list
+  of PPLM \citep{dathathri2020plug}, from the official repository at a pinned commit (Apache
+  2.0). Only the lexical target is used; the PPLM method is not reproduced;
+  \item explicit matching rules. Text is lowercased, and a word is a maximal run of ASCII
+  letters. Entries match whole words exactly, with no substrings, stemming or inflection. A
+  word cut by a window or prompt edge never matches. Counts use decoded text, not token
+  strings;
+  \item a text-only support check that runs first: \SpPosWin{} of \SpWin{} calibration windows
+  contain a list word (minimum 20). They come from \SpPosDocs{} of \SpCalDocs{} articles,
+  with at most \SpMaxDoc{} in one article. Windows are not independent documents, and
+  \SpStarWin{} of the positive windows contain the polysemous ``star'';
+  \item one confirmatory comparison, fixed in advance: the per-document difference in
+  any-hit between \LN{} and the decoder. Everything else is descriptive.
+\end{itemize}
+Unchanged from the wedding protocol:
+\begin{itemize}
+  \item calibration on WikiText-103 validation articles; the feature is the largest
+  activation difference between windows with and without list words, and DiffMean is the
+  difference of mean centred hook states (the lexicon therefore also selects the
+  directions);
+  \item each actor's norm budget is the largest of $\{0.05, 0.1, 0.2, 0.4, 0.8\}$ times the
+  median centred norm whose mean teacher-forced KL$(P_{\mathrm{base}}\,\|\,P_{\mathrm{edit}})$
+  on 32 calibration prompts is at most $\kappa = 0.1$ nats. A method with no such budget is
+  \notrun, not substituted;
+  \item test articles in a fixed seeded order, one keyword-free prompt each (BOS plus 31
+  tokens), up to 32 articles by a cost rule; every attempted article is recorded;
+  \item greedy decoding of 32 tokens with the edit at every position and no KV cache;
+  \item the mean-only control at the largest budget, outside every ranking;
+  \item random directions, SAE-TS and FGAA are \notrun.
 \end{itemize}
 
 \section{Reproducibility, Compute and Claim Map}
@@ -1261,14 +1136,19 @@ was read.
     pilot run: 1043\,s; summary: 34\,s;
     \item readout closure: \ClWall\,s wall (\ClCPU{} CPU-seconds summed over the two threads);
     \item matched-denominator re-aggregation: about 5\,s (standard library, one thread);
-    \item REAL-02-LX: adapter checks 9\,s; calibration \LxCalSecVOne\,s (v1, blocked) and
-    \LxCalSecVOneOne\,s (v1.1, blocked); run and summary not executed.
+    \item wedding lexicon: calibration \LxCalSecVOne\,s and \LxCalSecVOneOne\,s (both blocked);
+    \item space lexicon: text-only support count 11\,s; calibration \SpCalSec\,s; run
+    \SpRunSec\,s (32 articles, 192 rows); summary about 1\,s.
   \end{itemize}
-  Peak memory was below 9\,GB. No GPU was used, and nothing was installed or downloaded
-  after the third session.
+  Peak memory was below 9\,GB. No GPU was used. Model, SAE and data files are pinned by
+  revision and sha256; the only later external file is the 142-byte PPLM word list (with its
+  license).
   \item \emph{Claim map.} A claim-to-evidence table (\texttt{claims.csv}) links each
   statement to its files, experiment identifiers, assumptions and status.
-  \item \emph{Release.} The code and raw files will be released in anonymized form.
+  \item \emph{Supplement.} The anonymous supplement contains the code, configurations,
+  tests, raw result files, the claim map (\texttt{claims.csv}) and the space word list with its
+  license. Model, SAE and data files are not included; they are pinned by revision and
+  sha256.
 \end{itemize}
 
 \end{document}

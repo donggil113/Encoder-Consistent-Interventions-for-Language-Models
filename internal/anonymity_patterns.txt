@@ -1,0 +1,16 @@
+# internal only: identifying strings that must not appear in the anonymous package
+github.com/donggil
+donggil
+dgkang
+pusan.ac.kr
+Claude-Session
+claude.ai/code
+magical-bell
+Encoder-Consistent-Interventions
+/home/user
+/tmp/claude
+nvmedata
+claude.ai
+Claude-Session
+Co-Authored-By
+Anthropic

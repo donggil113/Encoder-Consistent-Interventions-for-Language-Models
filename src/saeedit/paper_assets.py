@@ -432,8 +432,12 @@ def main(argv=None) -> int:
         real.update(pilot_assets("results/real01r/summary.json", args.paper))
     if _closure():
         real.update(closure_assets())
+        coord_table(args.paper, "results/contract_exec/contract_exec_report.json",
+                    "results/contract_exec_v2/contract_exec_report.json")
     if os.path.exists("results/real01r_reagg/reagg_summary.json"):
         real.update(reagg_assets("results/real01r_reagg", args.paper))
+    if os.path.exists("results/real02_space/stage_status.json"):
+        real.update(space_assets("results/real02_space", args.paper))
     if os.path.exists("results/real02_lx/summary.json"):
         real.update(lx_assets("results/real02_lx", args.paper))
     elif os.path.exists("results/real02_lx/stage_status.json"):
@@ -531,6 +535,59 @@ def _ci(c, nd=3):
     return f"{f(c['estimate'])} [{f(c['lo'])}, {f(c['hi'])}]"
 
 
+def _matched_points(d: str) -> dict:
+    """(kind, method) -> 'matched/all' test points at q99 (tolerance 1e-6), from the re-aggregation."""
+    out = {}
+    sc = os.path.join(d, "status_counts.csv")
+    if not os.path.exists(sc):
+        return out
+    R = json.load(open(os.path.join(d, "reagg_summary.json")))
+    for r in csv.DictReader(open(sc)):
+        if r["mode"] == "target_matched" and r["dose"] == "q99":
+            out[(r["target_kind"], r["method"])] = f"{r['OK']}/{r['n_rows']}"
+    for kind in ("active", "inactive"):
+        u = R["unmatched_baselines"].get(f"decoder_calib_rescaled|{kind}|q99")
+        if u:
+            out[(kind, "decoder_calib_rescaled")] = f"{u['n_within_tol']}/{u['n_rows']}"
+    return out
+
+
+def coord_table(paper: str, v1_path: str, v2_path: str) -> None:
+    """Compact body table: raw off-slice vs canonical readout vs model output."""
+    C = _closure()
+    if C is None:
+        return
+    a, b = C["part_a_k9"], C["part_b_pilot_subset"]
+    v1 = json.load(open(v1_path))["checks"]
+    v2 = json.load(open(v2_path))["checks"]
+    adm = max(v for v in b["admissible_methods_max_abs_raw_minus_canonical"].values() if v is not None)
+    rows = [
+        (f"mean-only, contract windows ({len(C['per_window_k9'])})", "drift$/\\rho$ (median)",
+         f"{a['raw_drift_rel_median']:.1f}", _sci(a["canonical_drift_rel_max"]) + " (max)", "KL " + _sci(a["kl_clean_vs_h_plus_delta_max"])),
+        (f"mean-only, pilot points ({b['n_groups']})", "$D_{\\mathrm{all}}/\\rho$",
+         f"{b['mean_only_raw_drift_all_nontarget_rel_median']:.0f} (median)", _sci(b["mean_only_canonical_drift_all_nontarget_rel_max"]) + " (max)",
+         "KL " + _sci(b["mean_only_max_kl_clean_vs_edit"])),
+        ("unprojected decoder row", "$|\\Delta D_{\\mathrm{all}}|/\\rho$, raw vs canon.",
+         f"\\multicolumn{{2}}{{c}}{{up to {b['unprojected_decoder_max_abs_raw_minus_canonical_drift_all_rel']:.2f}}}",
+         "", "$|\\Delta\\log p|$ " + _sci(b["max_abs_logprob_diff_h_plus_delta_vs_h_plus_Pdelta"])),
+        (f"admissible edits ({b['n_rows']} incl.\\ controls)", "raw $-$ canonical",
+         f"\\multicolumn{{2}}{{c}}{{at most {_sci(adm)}}}", "", "--"),
+        ("fast vs canonical path, float64", "features / post-edit KL",
+         _sci(v2["K3_features"]["max_rel_diff"]), _sci(v2["K7_intervention_parity"]["max_kl"]), "pass"),
+        ("fast vs canonical path, float32", "next-token $|\\Delta p|$ (tol.\\ $10^{-5}$)",
+         "\\multicolumn{2}{c}{" + _sci(v1["K6_logit_parity"]["max_prob_diff"]) + "}", "", "\\textsc{fail} (kept)"),
+    ]
+    L = [r"\begin{tabular}{llccc}", r"\toprule",
+         r"Edit / check & Quantity & Raw $E(x{+}\delta)$ & Canonical $E(P(h{+}\delta))$ & Model \\", r"\midrule"]
+    for r in rows:
+        if r[3] == "" and "multicolumn" in r[2]:
+            L.append(f"{r[0]} & {r[1]} & {r[2]} & {r[4]} \\\\")
+        else:
+            L.append(" & ".join(r) + r" \\")
+    L += [r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(paper, "tables", "tab_coord.tex"), "w").write("\n".join(L) + "\n")
+
+
 def pilot_assets(summary_path: str, paper: str) -> dict:
     S = json.load(open(summary_path))
     cur = {(c["mode"], c["target_kind"], c["dose"], c["method"], c["metric"]): c for c in S["curves"]}
@@ -554,9 +611,10 @@ def pilot_assets(summary_path: str, paper: str) -> dict:
     L.append(r"\end{tabular}")
     open(os.path.join(paper, "tables", "tab_pilot_matched.tex"), "w").write("\n".join(L) + "\n")
     # medians-only variant for the main text (intervals in the appendix table)
-    Lm = [r"\begin{tabular}{llcccccc}", r"\toprule",
-          r"Target & Method & $n_{\mathrm{doc}}$ & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ & KL$\times10^{3}$ & $\|\delta\|$ \\",
+    Lm = [r"\begin{tabular}{llccccccc}", r"\toprule",
+          r"Target & Method & matched & $n_{\mathrm{doc}}$ & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ & KL$\times10^{3}$ & $\|\delta\|$ \\",
           r"\midrule"]
+    matched = _matched_points("results/real01r_reagg")
     for kind in ("active", "inactive"):
         for m in PILOT_METHODS:
             g = lambda met: cur.get(("target_matched", kind, "q99", m, met))
@@ -564,7 +622,7 @@ def pilot_assets(summary_path: str, paper: str) -> dict:
                                         else ("$\\approx 0$" if abs(sc * g(met)["estimate"]) < 1e-9
                                               else f"{sc * g(met)['estimate']:.3g}"))
             n = g("drift_all_nontarget_rel")["n_units"] if g("drift_all_nontarget_rel") else 0
-            Lm.append(f"{kind if m == 'decoder' else ''} & {PILOT_NAMES[m]} & {n} & {est('drift_orig_active_rel')} & "
+            Lm.append(f"{kind if m == 'decoder' else ''} & {PILOT_NAMES[m]} & {matched.get((kind, m), '--')} & {n} & {est('drift_orig_active_rel')} & "
                       f"{est('drift_newly_active_rel')} & {est('drift_all_nontarget_rel')} & {est('kl_next_token', 1e3)} & "
                       f"{est('edit_norm')} \\\\")
         Lm.append(r"\midrule")
@@ -800,6 +858,112 @@ def lx_blocked_assets(d: str) -> dict:
             "LxWindowsAll": str(hits(v11) + int(v11["n_nohit_windows"])),
             "LxCalSecVOne": f"{v1['seconds']:.0f}", "LxCalSecVOneOne": f"{v11['seconds']:.0f}",
             "LxStatus": v11["status"]}
+
+
+SP_NAMES = {"no_edit": "no edit", "decoder": "decoder $PD_j$", "encoder_grad": "encoder row $PE_j^{\\top}$",
+            "jacobian_ln": "LN ($J_EP$)", "diffmean": "DiffMean $Pv$", "mean_only": "mean-only (control)"}
+
+
+def space_assets(d: str, paper: str) -> dict:
+    """P3-REAL-02-SPACE: support macros always; result tables only if summary.json exists."""
+    st = json.load(open(os.path.join(d, "stage_status.json")))
+    sup = json.load(open(os.path.join(d, "support.json")))
+    last = lambda stage: ([x for x in st if x["stage"] == stage] or [{}])[-1]
+    M = {"SpPosWin": str(sup["positive_windows"]), "SpWin": str(sup["n_windows"]),
+         "SpPosDocs": str(sup["n_docs_with_positive_window"]), "SpCalDocs": str(sup["n_calibration_docs"]),
+         "SpMaxDoc": str(sup["max_positive_windows_in_one_doc"]),
+         "SpStarWin": str(sup["windows_with_entry"].get("star", 0)),
+         "SpCalStatus": last("calibrate").get("status", "NOT_RUN").replace("_", " "),
+         "SpRunStatus": last("run").get("status", "NOT_RUN").replace("_", " ")}
+    if last("calibrate").get("seconds") is not None:
+        M["SpCalSec"] = f"{last('calibrate')['seconds']:.0f}"
+    sp = os.path.join(d, "summary.json")
+    if not os.path.exists(sp):
+        return M
+    S = json.load(open(sp))
+    F = json.load(open(os.path.join(d, "calibration_frozen.json")))
+    per, par, pr = S["per_method_at_selected_budget"], S["paired"], S["primary"]
+    pct = lambda c: "--" if not c or c.get("estimate") is None else (
+        f"{100 * c['estimate']:.0f} [{100 * c['lo']:.0f}, {100 * c['hi']:.0f}]")
+    est = lambda c, sc=1.0: "--" if not c or c.get("estimate") is None else _sci(sc * c["estimate"])
+    L = [r"\begin{tabular}{lcccccccc}", r"\toprule",
+         r"Method & $n$ & budget & cal.\ KL & test KL & any hit (\%) & hits/100 tok. & NLL & $\Delta a_j$ \\", r"\midrule"]
+    for m in ("no_edit", "decoder", "encoder_grad", "jacobian_ln", "diffmean", "mean_only"):
+        p = per.get(m)
+        if m not in ("no_edit", "mean_only") and F["chosen_budget"].get(m) is None:
+            L.append(f"{SP_NAMES[m]} & -- & none $\\le\\kappa$ & \\multicolumn{{6}}{{c}}{{\\notrun}} \\\\")
+            continue
+        if not p or not p["n_docs"]:
+            L.append(f"{SP_NAMES[m]} & 0 & & \\multicolumn{{6}}{{c}}{{no rows}} \\\\")
+            continue
+        b = "--" if m == "no_edit" else (F["control_budget"] if m == "mean_only" else F["chosen_budget"][m])
+        ck = "--" if m in ("no_edit", "mean_only") else _sci(F["calibration_kl"][m][b])
+        bl = b if b == "--" else b + "$\\bar r$"
+        L.append(f"{SP_NAMES[m]} & {p['n_docs']} & {bl} & {ck} & {est(p['kl_prompt_teacher_forced'])} & {pct(p['any_hit_rate'])} & "
+                 f"{est(p['hits_per_generated_token'], 100)} & {est(p['continuation_nll_unedited_model'])} & "
+                 f"{est(p['target_change_mean'])} \\\\")
+    L += [r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(paper, "tables", "tab_space.tex"), "w").write("\n".join(L) + "\n")
+    P = [r"\begin{tabular}{lccccc}", r"\toprule",
+         r"Pair ($a-b$) & $n$ & $\Delta$ any hit (pp) & $a$ only / $b$ only & $\Delta$ test KL & $\Delta$ NLL \\", r"\midrule"]
+    for key in ("jacobian_ln-decoder", "jacobian_ln-diffmean", "jacobian_ln-encoder_grad", "decoder-diffmean",
+                "decoder-no_edit", "encoder_grad-no_edit", "jacobian_ln-no_edit", "diffmean-no_edit"):
+        a_, b_ = key.split("-")
+        g = lambda met: par.get(f"{key}|{met}")
+        sc = lambda c, k: "--" if not c or c.get("estimate") is None else (
+            f"{k * c['estimate']:.3g} [{k * c['lo']:.3g}, {k * c['hi']:.3g}]")
+        ha = {}
+        disc = "--"
+        if key == f"{pr['a']}-{pr['b']}":
+            disc = f"{pr['discordant']['a_only']} / {pr['discordant']['b_only']}"
+        n = g("success")["n_units"] if g("success") else 0
+        short = {"no_edit": "no edit", "decoder": "decoder", "encoder_grad": "encoder row", "jacobian_ln": "LN",
+                 "diffmean": "DiffMean"}
+        name = short[a_] + " $-$ " + short[b_]
+        if key == f"{pr['a']}-{pr['b']}":
+            name = r"\textbf{" + name + " (primary)}"
+        P.append(f"{name} & {n} & {sc(g('success'), 100)} & {disc} & {sc(g('kl_prompt_teacher_forced'), 1)} & "
+                 f"{sc(g('continuation_nll_unedited_model'), 1)} \\\\")
+    P += [r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(paper, "tables", "tab_space_paired.tex"), "w").write("\n".join(P) + "\n")
+    run = last("run")
+    c = pr["mean_difference"]
+    M.update({"SpFeature": str(F["feature"]), "SpDocs": str(pr["n_docs"]), "SpKappa": f"{F['kappa_nats']:g}",
+              "SpMedNorm": f"{F['budgets']['reference_median_norm']:.1f}",
+              "SpRunSec": f"{run.get('seconds', 0):.0f}",
+              "SpPrim": "--" if c.get("estimate") is None else f"{100 * c['estimate']:.1f}",
+              "SpPrimLo": "--" if c.get("lo") is None else f"{100 * c['lo']:.1f}",
+              "SpPrimHi": "--" if c.get("hi") is None else f"{100 * c['hi']:.1f}",
+              "SpDiscA": str(pr["discordant"]["a_only"]), "SpDiscB": str(pr["discordant"]["b_only"]),
+              "SpBoth": str(pr["discordant"]["both_hit"]), "SpNeither": str(pr["discordant"]["neither"]),
+              "SpVerdict": pr["verdict"].split(" ")[0].replace("_", " ").lower(),
+              "SpAttempted": str(S["attempted_test_docs"]["n"]), "SpSkipped": str(len(S["attempted_test_docs"]["skipped"])),
+              "SpOverlapPilot": str(len(S["overlap"].get("test_docs_also_in_real01r_pilot", []))),
+              "SpOverlapCal": str(len(S["overlap"].get("test_docs_in_calibration_ids", []))),
+              "SpCtrlSame": f"{S['control_mean_only']['identical_continuation_to_no_edit']}/{S['control_mean_only']['n']}",
+              "SpCtrlKL": _sci(S["control_mean_only"]["max_kl"]),
+              "SpFailed": str(sum(v.get("FAILED", 0) for v in S["row_status_counts"].values()))})
+    ph = os.path.join(d, "posthoc_continuation_change.json")
+    if os.path.exists(ph):  # post-hoc descriptive (labelled as such in the text)
+        H = json.load(open(ph))
+        M["SpBound"] = f"{100 * H['clopper_pearson_95_upper_on_discordance_rate_0_of_32']:.1f}"
+        for m, mm in (("decoder", "Dec"), ("encoder_grad", "Enc"), ("jacobian_ln", "Ln"), ("diffmean", "Dm"),
+                      ("mean_only", "Mean")):
+            M[f"SpChanged{mm}"] = str(H["per_method"][m]["continuation_differs_from_no_edit"])
+        M["SpDmGain"] = str(len(set(H["docs_with_hit"]["diffmean"]) - set(H["docs_with_hit"]["no_edit"])))
+        M["SpDmLoss"] = str(len(set(H["docs_with_hit"]["no_edit"]) - set(H["docs_with_hit"]["diffmean"])))
+    for m, mm in (("no_edit", "None"), ("decoder", "Dec"), ("encoder_grad", "Enc"), ("jacobian_ln", "Ln"),
+                  ("diffmean", "Dm"), ("mean_only", "Mean")):
+        p = per.get(m)
+        if p and p["n_docs"]:
+            M[f"SpDaj{mm}"] = f"{p['target_change_mean']['estimate']:.2f}"
+            M[f"SpDall{mm}"] = f"{p['drift_all_nontarget_mean']['estimate']:.2f}"
+            M[f"SpHit{mm}"] = pct(p["any_hit_rate"])
+            M[f"SpKL{mm}"] = _sci(p["kl_prompt_teacher_forced"]["estimate"])
+            M[f"SpNLL{mm}"] = f"{p['continuation_nll_unedited_model']['estimate']:.2f}"
+        if m not in ("no_edit", "mean_only"):
+            M[f"SpBud{mm}"] = str(F["chosen_budget"][m])
+    return M
 
 if __name__ == "__main__":
     raise SystemExit(main())

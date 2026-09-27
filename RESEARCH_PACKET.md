@@ -650,3 +650,70 @@ frozen protocol, not a rerun.
   download.
 
 Until then the paper makes no behavioural claim.
+
+## 13. P3-REAL-02-SPACE (fifth session): RAN; primary not supported
+
+- **Protocol.** `configs/p3_real02_space.json`, frozen in commit caf43c8 before any SPACE
+  count, feature forward or generation.
+  - Topic: the PPLM space list (uber-research/PPLM @ e236b898, `paper_code/wordlists/space.txt`,
+    18 words, Apache-2.0), fixed by the Round-5 instruction and not searched for.
+  - Only the lexical target is used; PPLM is not reproduced.
+  - The wedding records are kept, and that branch is closed.
+- **Matching (`bounded_v1`).**
+  - Lowercase; words are maximal `[a-z]` runs; entries match exact whole words (no
+    substring, stem or inflection).
+  - Window and prompt edge fragments never match; counts use decoded text, not token
+    strings.
+  - Unit-tested in `tests/test_real_stdlib.py::test_bounded_lexicon`.
+- **Support (text-only, tokenizer only).** 58/1943 calibration windows in 22/60 articles
+  (max 9 per article), against a minimum of 20 windows. By entry: star 28, planet 10, moon 7,
+  satellite 7, space 6, earth 3, orbit 3, aerospace 1, universe 1; 0 for the others.
+  Windows ≠ independent documents.
+- **Calibration** (validation only).
+  - Feature 4671 (top-5 scores 0.263, 0.261, 0.152, 0.152, 0.150). DiffMean norm 4.85.
+  - Every actor selected budget 0.1 × the median norm 101.6 (ρ = 10.16).
+  - Calibration KL at that budget: decoder 0.030, encoder row 0.030, LN 0.021, DiffMean
+    0.054. At 0.2 × the median norm all exceed κ = 0.1 (LN 0.104).
+- **Test.**
+  - 32 WikiText-103 test articles in the frozen order, one prompt each, none skipped, 0
+    failed rows.
+  - 28 of the 32 were edit sites in the REAL-01R internal pilot, so they are held out from
+    calibration but not unseen.
+- **Primary (LN − decoder any-hit, 32 greedy tokens):** 0.0 pp. Discordant 0 (LN only) /
+  0 (decoder only); both hit 1, neither 31. The bootstrap interval degenerates at [0, 0];
+  the exact Clopper–Pearson 95% upper bound on the discordance rate is 10.9%.
+  **NOT_SUPPORTED; not equivalence.**
+- **Secondary (descriptive).**
+  - Any-hit is 1/32 for no edit, decoder, encoder row, LN and mean-only. The hit is "All-Star"
+    matched as "star", a polysemy hit under the frozen rule.
+  - DiffMean: 2/32 (gained "Star Wars" and "planet's", lost "All-Star"). Δ vs no edit
+    +3.1 pp [−6.3, 12.6].
+  - Test KL on the prompt: decoder 0.028, encoder row 0.027, LN 0.021, DiffMean 0.049.
+    Mean-only 1.5e-17.
+  - Canonical Δa_j at prompt positions: decoder 1.73, encoder row 3.92, LN 2.99, DiffMean 0.
+  - Non-target drift: decoder 3.65, encoder row 9.17, LN 1.68, DiffMean 3.56.
+  - Continuation NLL under the base model: 1.20–1.37, against 1.32 without an edit.
+- **Post hoc, descriptive** (`posthoc_continuation_change.json`, computed after the summary
+  was read): continuations differ from no edit in 26 (decoder), 24 (encoder row), 26 (LN),
+  31 (DiffMean) and 0 (mean-only) of 32 articles; the median first divergence is at token 2–4.
+- **Reading.**
+  - At a KL cap of 0.1 nats these feature edits change internal readouts and surface text
+    but not space-lexicon occurrence.
+  - The pilot cannot separate LN from the decoder.
+  - Events are sparse (1/32 base rate), so only large effects were detectable.
+  - This is a supervised lexical objective, not semantic control; semantic is NOT_RUN.
+- **Cost.** Support 11.7 s; calibrate 961 s; run 1334 s; summarize 1.2 s (2 threads,
+  CPU-s not recorded for calibrate and run).
+
+## 14. Next decision (one; needs the user)
+
+Choose the paper's scope. The two options are exclusive in this round's budget.
+
+- **(A) Freeze P3 as a bounded audit paper.** Claims C41 (readout caveat), C38 (conditional
+  fidelity with full denominator) and C48 (null lexical pilot) as they stand. The next step
+  would be only an approved TeX build environment to check the 8-page limit and table
+  legibility.
+- **(B) Authorize one pre-registered KL-dose extension of the same frozen SPACE setup.**
+  Same feature, the same 32 articles, κ ∈ {0.1, 0.3, 1.0}, primary unchanged. It would test
+  whether lexical occurrence moves at all at larger output change before any claim about
+  the correction.

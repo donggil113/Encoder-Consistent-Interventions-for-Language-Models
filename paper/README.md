@@ -1,18 +1,21 @@
-# Manuscript v3: "Auditing Sparse Autoencoder Feature Edits in GPT-2 Small: Coordinates, Fidelity, and a Lexical Pilot"
+# Manuscript v4: "Auditing Sparse Autoencoder Feature Edits in GPT-2 Small: Coordinates, Fidelity, and a Lexical Pilot"
 
-The title was narrowed in v3; the v2 title ("From Feature Edits to Behavioral Effects: …") promised
-behavioral results that exist only as a lexical pilot.
+v4 condenses v3 (edited in place, not regenerated). It keeps three core claims (see
+`claims.csv`, column `core`):
+1. the readout convention, a measurement caveat resting on a standard LayerNorm property;
+2. conditional same-layer fidelity with its full denominator;
+3. one lexical pilot, P3-REAL-02-SPACE.
 
-Order in v3: (a) raw vs canonical coordinates → (b) admissible feature realization (including
-the toy redistribution results) → (c) matched-denominator robustness → (d) lexical change and
-quality (P3-REAL-02-LX). v3 was produced by editing v2 in place, not by regenerating it.
+The body has three core tables: coordinates, target-matched fidelity with denominators, and
+the lexical result. Operational records moved to the appendix, among them the closed
+wedding branch and the denominator status table.
 
 | Field | Value |
 |---|---|
 | TARGET_YEAR | 2027 (ICML) |
 | TEMPLATE_YEAR | 2026 |
 | SUBMISSION_READY | **false** |
-| Compile status | **COMPILE_NOT_RUN**: no LaTeX compiler (`pdflatex`, `latexmk`, `tectonic`, `xelatex`, `lualatex`) is installed, and installing one was not approved. No PDF exists and no page count was measured. `src/saeedit/tex_check.py` ran static checks (`results/reaggregated/tex_check.json`). The manuscript was not uploaded to any web compiler. |
+| Compile status | **COMPILE_NOT_RUN** (checked again for v4): no LaTeX compiler (`pdflatex`, `latexmk`, `tectonic`, `xelatex`, `lualatex`, `kpsewhich`) is installed, and installing one was not approved. No PDF exists; the page count, the page that holds the last sentence of the Conclusion, and table legibility at 100% are unchecked. `src/saeedit/tex_check.py` ran static checks (`results/reaggregated/tex_check.json`). The manuscript was not uploaded to any web compiler. |
 | Mode | anonymous review (`\usepackage{icml2026}`) |
 
 ## Template
@@ -20,8 +23,8 @@ quality (P3-REAL-02-LX). v3 was produced by editing v2 in place, not by regenera
 We did not find an official ICML 2027 author kit on 2026-09-26: the three URLs
 `icml.cc/Conferences/2027/{CallForPapers,AuthorInstructions}` and
 `media.icml.cc/Conferences/ICML2027/Styles/icml2027.zip` returned 404. That is evidence about
-those URLs on that date only, not proof that no 2027 information exists elsewhere; re-check
-before submission.
+those URLs on that date only, not proof that no 2027 information exists elsewhere. A status-only
+re-check on 2026-09-27 09:15 UTC again returned 404 for all three. Re-check before submission.
 The **official ICML 2026 style files** are therefore used temporarily and are **unmodified**:
 they were not renamed to 2027, and margins and fonts are untouched.
 
@@ -50,7 +53,10 @@ latexmk -pdf -interaction=nonstopmode main.tex
 pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```
 
-The same sources are in `export_bundle/p3_v3_bundle.tar.gz` under `p3_v3/paper/`.
+The same sources are in both packages:
+- `export_bundle/p3_v4_anonymous.tar.gz`: the submission package. It is anonymity-scanned
+  and excludes internal notes.
+- `export_bundle/p3_v4_internal.tar.gz`: the evidence package.
 
 Packages beyond the kit: `pgfplots` (with the `groupplots` library), `booktabs`,
 `subcaption`, `cleveref`, `mathtools` and `microtype`. After compiling, check:

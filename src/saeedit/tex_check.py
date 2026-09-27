@@ -17,7 +17,12 @@ import os
 import re
 from collections import Counter
 
-IDENTIFYING = ("github.com/donggil", "donggil", "pusan.ac.kr", "claude.ai", "Claude", "Anthropic")
+# Identifying strings are read from an internal file that is never shipped in the anonymous
+# package (see src/saeedit/export_bundle.py); only generic patterns are hard-coded here.
+IDENTIFYING: tuple = ()
+_PATTERNS = os.path.join(os.path.dirname(__file__), "..", "..", "internal", "anonymity_patterns.txt")
+if os.path.exists(_PATTERNS):
+    IDENTIFYING = IDENTIFYING + tuple(l.strip() for l in open(_PATTERNS) if l.strip() and not l.startswith("#"))
 BUILTIN_OK = set()
 
 
@@ -76,7 +81,7 @@ def main(argv=None) -> int:
     cand = {u for u in used if (u.startswith(("R", "D", "S", "T", "V", "E", "F", "C", "P", "L")) and u not in known_latex and u not in own)}
     report["number_macros_used"] = sorted(cand & defined)
     report["number_macros_undefined"] = sorted(u for u in cand - defined
-                                               if re.match(r"^(R(one|two|three|foura|fourb|five|zero)|Dense|Sparse|Tx|Tr|Vfive|Vsix|Enc|Feas|Repair|Topk|Cx|Pilot|Cl|Rg|Lx)", u))
+                                               if re.match(r"^(R(one|two|three|foura|fourb|five|zero)|Dense|Sparse|Tx|Tr|Vfive|Vsix|Enc|Feas|Repair|Topk|Cx|Pilot|Cl|Rg|Lx|Sp)", u))
 
     # environments
     begins = Counter(re.findall(r"\\begin\{([^}]+)\}", tex))

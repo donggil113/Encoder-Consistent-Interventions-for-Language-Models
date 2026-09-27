@@ -1,23 +1,45 @@
-# P3 export bundle (manuscript v3)
+# P3 packages
 
-- `p3_v3_bundle.tar.gz` contains, under `p3_v3/`:
-  - the manuscript sources (`paper/`: main.tex, references.bib, generated numbers, tables,
-    figure data, claims.csv, and the unmodified ICML 2026 style files);
-  - configs, code and tests;
-  - small raw files and aggregates (`results/`);
-  - STATUS, RESEARCH_PACKET, RELATED_WORK and run_manifest.
-- `MANIFEST.json` gives the sha256 and size of every bundled file and the sha256 of the
-  archive.
-- **No PDF.** No LaTeX compiler exists in this environment (COMPILE_NOT_RUN), and the
-  manuscript was not sent to any web compiler. To build:
+## v4 (current)
+
+- `p3_v4_anonymous.tar.gz` is the **submission package**. It contains:
+  - the manuscript sources (`paper/`, with the unmodified ICML 2026 style files);
+  - an anonymised supplement: code, configs, tests, small raw files and aggregates, the claim
+    map, and the PPLM space word list with its Apache-2.0 license.
+  - Internal notes (STATUS, RESEARCH_PACKET, RELATED_WORK, run manifest, paper/README) and git
+    metadata are excluded.
+  - Every file was scanned against `internal/anonymity_patterns.txt` (not shipped) for
+    usernames, local paths, remotes and session metadata; the build fails if any is found.
+  - Tar members carry no owner names and a fixed mtime.
+- `p3_v4_internal.tar.gz` is the **evidence package**: the same content plus the internal notes.
+- `*_MANIFEST.json` gives:
+  - sha256 and size per file;
+  - the archive sha256;
+  - a check that every item the manuscript says the supplement contains is present.
+- **No PDF.** No LaTeX compiler exists in this environment (COMPILE_NOT_RUN), and nothing was
+  sent to a web compiler. To build:
 
   ```
-  tar xzf p3_v3_bundle.tar.gz && cd p3_v3/paper
+  tar xzf p3_v4_anonymous.tar.gz && cd p3_v4_anonymous/paper
   latexmk -pdf -interaction=nonstopmode main.tex
   # or: pdflatex main && bibtex main && pdflatex main && pdflatex main
   ```
 
-  After building, check: body ≤ 8 pages, no undefined references or citations, no table
-  overflow, anonymous header.
-- **Not included:** model/SAE weights, the HF cache, the virtual environment, personal data.
-- **Rebuild the bundle:** `PYTHONPATH=src python3 -m saeedit.export_bundle --out export_bundle`
+  Then check the following:
+  - the page that holds the Conclusion's last sentence is page 8 or earlier;
+  - there are no undefined references;
+  - tables are legible at 100%;
+  - the anonymous header is present.
+- **Not included:** model/SAE weights and the WikiText files. They are pinned by revision in
+  `configs/p3_contract_gpt2_res_jb_l8.json` and by sha256 in `configs/p3_asset_hashes.json`.
+  The HF cache and the virtual environment are also not included.
+- **Rebuild:**
+
+  ```
+  PYTHONPATH=src python3 -m saeedit.export_bundle --mode anonymous --out export_bundle
+  PYTHONPATH=src python3 -m saeedit.export_bundle --mode internal --out export_bundle
+  ```
+
+## v3 (kept as the previous deliverable)
+
+`p3_v3_bundle.tar.gz` and `MANIFEST.json`.
