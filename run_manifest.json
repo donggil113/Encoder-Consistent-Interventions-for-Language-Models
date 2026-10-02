@@ -608,5 +608,67 @@
    "export_bundle/p3_v4_anonymous.tar.gz",
    "export_bundle/p3_v4_internal.tar.gz"
   ]
+ },
+ "sixth_session": {
+  "date": "2026-10-02",
+  "head_at_start": "09db0f8e29f4bad4a6cb3e89554ad26a6b70b729",
+  "decision": "A (scope frozen; B not approved)",
+  "approval": "Round-6 limited PDF build approval only: minimal TeX Live into the session scratchpad (no sudo), pymupdf for local rendering; no experiment, model test or generation rerun; nothing uploaded.",
+  "tex": {
+   "distribution": "TeX Live via mirror.ctan.org (resolved to a CTAN mirror), install-tl-20261002, scheme-basic, portable, no docs/sources",
+   "engine": "pdfTeX 1.40.29",
+   "tlmgr": "r79639",
+   "extra_packages": [
+    "booktabs",
+    "caption",
+    "cleveref",
+    "eso-pic",
+    "float",
+    "forloop",
+    "fp",
+    "latexmk",
+    "mathtools",
+    "microtype",
+    "pgf",
+    "pgfplots",
+    "xcolor",
+    "xkeyval",
+    "everyshi",
+    "times",
+    "courier",
+    "helvetic"
+   ],
+   "install_wall_s": 136,
+   "network_rx_delta_bytes_window": 115358022,
+   "scratch_disk_bytes": 258375034
+  },
+  "build": {
+   "passes": "pdflatex, bibtex, pdflatex x2 (+ rebuilds after layout fixes)",
+   "pages": 20,
+   "body_end_page": 7,
+   "undefined_refs": 0,
+   "overfull_boxes_final": 0,
+   "layout_fixes": [
+    "\\UrlBreaks extended to letters and punctuation (bibliography URLs)",
+    "appendix dose figure width 0.42\\textwidth",
+    "Table 1 \\tabcolsep 4pt",
+    "appendix interval table split into drift and quality parts; KL x1e3; rounding-level target errors as <1e-7",
+    "contract/proxy/denominator appendix tables in \\small",
+    "interval/number formatting without e-notation",
+    "text under the Model-SAE Contract heading; two appendix floats moved after their text"
+   ],
+   "web_compiler": "none",
+   "appendix_start_page": 11,
+   "font_shape_warnings": 0,
+   "verification": "3 agent workflows (manuscript lenses with 2 skeptics per finding; per-page PDF checks x2); numbers lens: no mismatch; all actionable findings fixed; cosmetic items accepted and listed in STATUS"
+  },
+  "derived_files": [
+   "results/real02_space/sensitivity_bounds.json"
+  ],
+  "status": "METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT / STUDY_SCOPE_FROZEN",
+  "packages": {
+   "anonymous": "export_bundle/p3_v4_1_anonymous.tar.gz (113 files, PDF included, commit ids redacted in 4 files, standalone rebuild verified)",
+   "internal": "export_bundle/p3_v4_1_internal.tar.gz (117 files)"
+  }
  }
 }

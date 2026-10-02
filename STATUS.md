@@ -1,8 +1,98 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-09-27 (fifth session, Round 5). Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-10-02 (sixth session, Round 6, option A). Branch: `claude/magical-bell-8vyrpd`.
 
-## Fifth session summary (Round 5; read first)
+## Sixth session summary (Round 6, option A; read first)
+
+Checked at start: HEAD `09db0f8` equal to origin; clean tree; venv and HF cache present; no
+TeX; `/nvmedata` absent (not created). Decision A: no behavioural extension (B not approved),
+no new topic/feature/lexicon/dose/model/SAE/generation/semantic judge. No model test or
+generation was rerun. Study status: **METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT /
+STUDY_SCOPE_FROZEN** (an operational label for this study, not a verdict on SAE steering).
+
+**Statistics relabelled (derived file only; `results/real02_space/sensitivity_bounds.json`;
+`summary.json` unchanged).**
+- Primary LN − decoder any-hit: 0, discordance 0 of 32, as observed. The [0, 0] bootstrap is
+  degenerate (every per-article difference is 0) and is not equivalence evidence.
+- Under an iid Bernoulli discordance model (unverified; 28/32 articles reused from the
+  internal pilot; one fixed seeded order): one-sided 95% upper bound 1 − 0.05^(1/32) =
+  8.94%; two-sided 95% Clopper–Pearson upper 1 − 0.025^(1/32) = 10.89%. The 10.9% reported
+  in v4 is the latter and is now labelled so. Both bound the discordance probability; they
+  are not an observed difference. |E[hit_LN − hit_dec]| ≤ Pr(discordance) is used only under
+  the same model.
+- DiffMean vs no edit: 3 discordant articles (2 gained, 1 lost), net +1; CP 95% on its
+  discordance probability 2.0–25.0% (descriptive).
+- Text-change counts 24–31/32 are post-hoc description, not a substitute outcome.
+- "All-Star" → "star" stays a legitimate whole-word hit; no post-hoc filter.
+- mean-only canonical ≈ 0 kept; raw off-slice drift stays withdrawn.
+
+**Manuscript v4.1** (`paper/main.tex`, edited in place; body ≈ 4,235 words).
+- Central question narrowed; invariance stated as a known property; title/abstract state
+  the pilot was run, with no improvement/equivalence/semantic claim.
+- Limitations added: dose not extended on the same topic; sensitivity bounds model-based
+  with reused articles.
+- Study-status paragraph in the appendix; claims C48/C50/C31 updated, C51 added.
+
+**PDF built locally** (limited build approval): `paper/main.pdf`, 20 pages, the last
+sentence of the Conclusion is on page 7 (Impact Statement and References start on page 7;
+the one-column appendix starts on page 11), no undefined references or citations, 0 overfull
+boxes, 0 font-shape warnings. Layout fixes applied to reach that (no font, margin or scaling change): URL line
+breaks after letters/punctuation in the preamble (bibliography hash URLs); the appendix dose
+figure resized for one-column width; Table 1 `\tabcolsep` 4 pt; the appendix interval
+table split into a drift part and a quality part (KL in units of 10⁻³ nats; rounding-level
+target errors shown as <10⁻⁷); contract, proxy and denominator appendix tables set in
+`\small` instead of `\scriptsize`; number formatting without "e-04" strings; a sentence
+under the empty "Model–SAE Contract" heading; two appendix floats moved after their text;
+acronyms in bibliography titles brace-protected (SAE, GPT-2, Gemma 2, …); the paired-difference
+appendix table drops the redundant ΔD_orig column so it fits at a readable size.
+Pages rendered at 110 dpi (pymupdf) and inspected by me and by per-page agents. PDF metadata: title set, author "Anonymous Authors" (style default), no personal
+metadata. Not sent to any web compiler. The anonymous package was unpacked in a clean
+folder and rebuilt with the same TeX install: same page count, 0 overfull, 0 undefined.
+
+**Packages** (`export_bundle/p3_v4_1_anonymous.tar.gz`, 113 files, 4.0 MB;
+`export_bundle/p3_v4_1_internal.tar.gz`, 117 files). Both include `paper/main.pdf`. The
+anonymous build now also replaces this repository's commit identifiers with `<commit>` in
+shipped text files (4 files; the frozen configs are byte-identical otherwise and remain
+valid JSON), ships a `SUPPLEMENT_README.md`, and checks that every item the manuscript says
+the supplement contains is present. The identifying-string scan is a string check, not a
+proof of anonymity. Third-party notices (ICML style files, PPLM Apache-2.0 license) and all
+reproducibility pins (revisions, sha256, PPLM commit) are kept.
+
+**Verification (adversarial, agent-based; results read and acted on).**
+- Manuscript lenses (statistics wording, numbers vs sources, claim map, anonymity/packaging,
+  LaTeX structure), each finding challenged by two skeptics: the numbers lens found no
+  mismatch; the other lenses' findings were fixed (post-hoc text-change count out of the
+  abstract and stated per method; "upper end of a two-sided CP interval" wording; "with the
+  decoder, encoder-row and corrected edits matched" instead of "every method"; closure
+  agreement stated for the 760 edits at 16 test points; claim-map locations refreshed to v4.1
+  numbering; internal-only evidence pointers marked; repository commit ids redacted in the
+  anonymous package; paragraph-level labels removed; small caps no longer nested in italics).
+- Per-page PDF checks on the final render (three passes; the last one caught a verdict row
+  in Table 11 that my own generator had broken, fixed before packaging): body ends on page 7;
+  no margin overflow, clipping, "??" or identifying strings. Remaining accepted cosmetics: loose justified
+  spacing next to unbreakable inline intervals; blank space before the trailing appendix
+  float pages; the two red TODO markers (P3-REAL-01R-FULL, P3-REAL-02-SEM) kept on purpose.
+
+### Sixth session: build environment and cost ledger
+
+| step | wall | network (RX counter) | disk | notes |
+|---|---|---|---|---|
+| TeX Live scheme-basic (install-tl from the CTAN mirror network, user folder in the session scratchpad, no sudo) | 118 s | ≈ 111.1 MB | 187 MB | official TeX Live distribution; docs/sources off |
+| tlmgr: 15 packages (booktabs, caption, cleveref, eso-pic, float, forloop, fp, latexmk, mathtools, microtype, pgf, pgfplots, xcolor, xkeyval, everyshi) + fonts (times, courier, helvetic) | 8 s + 5 s + 5 s | ≈ 2.5 MB | 4 MB | two package names were wrong in the first list (`ms`, `urw-base35`); corrected by file search |
+| pymupdf 1.28.2 into the scratch venv (PyPI, `--no-deps`) | 5.6 s | pip cache / ≤ 25 MB | 67 MB | local page rendering only |
+| pdflatex/bibtex passes (7 pdflatex + 1 bibtex, incl. 3 rebuilds after layout fixes) | ≈ 45 s total | 0 | 1.3 MB | first pass failed on missing Courier metrics; fixed by installing `courier` |
+| page rendering (3 × 19 pages) | ≈ 1.5 s each | 0 | 2 MB | 110 dpi PNGs in the scratchpad |
+| verification workflows (manuscript rules/numbers/claims/anonymity/LaTeX; per-page PDF checks) | parallel agents | 0 | – | results below |
+
+Totals: TeX install + first PDF 16:08–16:13 UTC (≈ 5 min of the 30-min cap); all later
+rebuilds (≈ 20 pdflatex passes, 5 bibtex runs, 3 standalone rebuilds from the anonymous
+package) were each 5–12 s. RX counter delta over the whole 16:08–16:53 window ≈ 137.5 MB,
+an upper bound on the build-related network use (cap 3 GiB); scratch disk ≈ 258 MB for TeX
+Live (160 packages installed) + pymupdf, plus ≈ 28 MB of renders and the unpacked test copy
+(cap 6 GiB). CPU-seconds were not recorded for the TeX steps. Agent verification: 4
+workflows, 131 subagents, ≈ 7.3 M tokens.
+
+## Fifth session summary (previous)
 
 Checked at start: HEAD `78d95ac` equal to origin; clean tree; venv and HF cache (672 MB) present;
 no LaTeX compiler; `/nvmedata` does not exist in this sandbox, so it was not created.

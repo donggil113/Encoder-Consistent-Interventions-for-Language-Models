@@ -1,8 +1,8 @@
 # P3 packages
 
-## v4 (current)
+## v4.1 (current)
 
-- `p3_v4_anonymous.tar.gz` is the **submission package**. It contains:
+- `p3_v4_1_anonymous.tar.gz` is the **submission package**. It contains:
   - the manuscript sources (`paper/`, with the unmodified ICML 2026 style files);
   - an anonymised supplement: code, configs, tests, small raw files and aggregates, the claim
     map, and the PPLM space word list with its Apache-2.0 license.
@@ -10,17 +10,21 @@
     metadata are excluded.
   - Every file was scanned against `internal/anonymity_patterns.txt` (not shipped) for
     usernames, local paths, remotes and session metadata; the build fails if any is found.
+  - This repository's commit identifiers are replaced by `<commit>` in shipped text files
+    (listed in the manifest under `commit_ids_redacted`); third-party pins (revisions, sha256,
+    the PPLM commit) are kept.
+  - A `SUPPLEMENT_README.md` describes the contents and the exclusions.
   - Tar members carry no owner names and a fixed mtime.
-- `p3_v4_internal.tar.gz` is the **evidence package**: the same content plus the internal notes.
+- `p3_v4_1_internal.tar.gz` is the **evidence package**: the same content plus the internal notes.
 - `*_MANIFEST.json` gives:
   - sha256 and size per file;
   - the archive sha256;
   - a check that every item the manuscript says the supplement contains is present.
-- **No PDF.** No LaTeX compiler exists in this environment (COMPILE_NOT_RUN), and nothing was
-  sent to a web compiler. To build:
+- **PDF included** (`paper/main.pdf`, built 2026-10-02 with a minimal local TeX Live; nothing
+  was sent to a web compiler). To rebuild from the sources:
 
   ```
-  tar xzf p3_v4_anonymous.tar.gz && cd p3_v4_anonymous/paper
+  tar xzf p3_v4_1_anonymous.tar.gz && cd p3_v4_1_anonymous/paper
   latexmk -pdf -interaction=nonstopmode main.tex
   # or: pdflatex main && bibtex main && pdflatex main && pdflatex main
   ```
@@ -40,6 +44,7 @@
   PYTHONPATH=src python3 -m saeedit.export_bundle --mode internal --out export_bundle
   ```
 
-## v3 (kept as the previous deliverable)
+## Previous deliverables (kept)
 
-`p3_v3_bundle.tar.gz` and `MANIFEST.json`.
+`p3_v4_anonymous.tar.gz` / `p3_v4_internal.tar.gz` (v4, no PDF) and `p3_v3_bundle.tar.gz`
+with `MANIFEST.json` (v3).

@@ -717,3 +717,19 @@ Choose the paper's scope. The two options are exclusive in this round's budget.
   Same feature, the same 32 articles, κ ∈ {0.1, 0.3, 1.0}, primary unchanged. It would test
   whether lexical occurrence moves at all at larger output change before any claim about
   the correction.
+
+## 15. Round 6 (option A): scope frozen, statistics relabelled, PDF built
+
+- Decision A: no KL-dose extension; no new experiment. Status
+  **METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT / STUDY_SCOPE_FROZEN**.
+- `results/real02_space/sensitivity_bounds.json` (new derived file): for 0 discordant of 32,
+  one-sided 95% upper bound on the discordance probability 0.0894 (1 − 0.05^(1/32));
+  two-sided 95% Clopper–Pearson [0, 0.1089] (upper 1 − 0.025^(1/32)). The iid model is
+  unverified (fixed seeded order; 28/32 articles reused from REAL-01R; one prompt each), so
+  these are model-based sensitivity statements. |E[hit_LN − hit_dec]| ≤ Pr(discordance) holds
+  under that model only. DiffMean vs no edit: 3 discordant (2 gained / 1 lost), net +1,
+  CP 95% [0.020, 0.250].
+- Manuscript v4.1 and the built PDF: see STATUS (sixth session) and `paper/README.md`.
+- Reopening the behavioural question (not planned here) needs: a behavioural label defined
+  independently of direction selection; data separated from calibration; adequate
+  precision; a question posed against the closest prior work.

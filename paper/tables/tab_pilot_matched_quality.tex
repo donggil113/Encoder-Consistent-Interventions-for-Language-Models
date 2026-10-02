@@ -1,0 +1,17 @@
+\begin{tabular}{llcc}
+\toprule
+Target & Method & KL$\times10^{3}$ & $\|\delta\|$ \\
+\midrule
+active & decoder & 5.32\,\allowbreak[0.523, 14.8] & 21.6\,\allowbreak[12.8, 30.8] \\
+ & rescaled (weight-only) & 5.32\,\allowbreak[0.523, 14.8] & 21.6\,\allowbreak[12.8, 30.8] \\
+ & encoder row & 1.03\,\allowbreak[0.177, 2.72] & 11.8\,\allowbreak[8.17, 17] \\
+ & LN ($J_EP$) & 0.96\,\allowbreak[0.14, 3.19] & 12.7\,\allowbreak[9.47, 18.5] \\
+ & random$^{33}$ & 691\,\allowbreak[66.2, 950] & 438\,\allowbreak[271, 875] \\
+\midrule
+inactive & decoder & 3.41\,\allowbreak[1.37, 9.69] & 36.9\,\allowbreak[29, 41.5] \\
+ & rescaled (weight-only) & 0.65\,\allowbreak[0.431, 5.91] & 22.5\,\allowbreak[12.3, 26.5] \\
+ & encoder row & 1.38\,\allowbreak[0.485, 2.49] & 21\,\allowbreak[17.2, 23.7] \\
+ & LN ($J_EP$) & 1.16\,\allowbreak[0.393, 3.19] & 22.5\,\allowbreak[19.4, 25.2] \\
+ & random$^{35}$ & 327\,\allowbreak[137, 980] & 1174\,\allowbreak[594, 1837] \\
+\bottomrule
+\end{tabular}

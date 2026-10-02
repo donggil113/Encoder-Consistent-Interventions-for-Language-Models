@@ -1,4 +1,4 @@
-# Manuscript v4: "Auditing Sparse Autoencoder Feature Edits in GPT-2 Small: Coordinates, Fidelity, and a Lexical Pilot"
+# Manuscript v4.1: "Auditing Sparse Autoencoder Feature Edits in GPT-2 Small: Coordinates, Fidelity, and a Lexical Pilot"
 
 v4 condenses v3 (edited in place, not regenerated). It keeps three core claims (see
 `claims.csv`, column `core`):
@@ -15,7 +15,7 @@ wedding branch and the denominator status table.
 | TARGET_YEAR | 2027 (ICML) |
 | TEMPLATE_YEAR | 2026 |
 | SUBMISSION_READY | **false** |
-| Compile status | **COMPILE_NOT_RUN** (checked again for v4): no LaTeX compiler (`pdflatex`, `latexmk`, `tectonic`, `xelatex`, `lualatex`, `kpsewhich`) is installed, and installing one was not approved. No PDF exists; the page count, the page that holds the last sentence of the Conclusion, and table legibility at 100% are unchecked. `src/saeedit/tex_check.py` ran static checks (`results/reaggregated/tex_check.json`). The manuscript was not uploaded to any web compiler. |
+| Compile status | **BUILT (v4.1, 2026-10-02)** with a minimal TeX Live (scheme-basic + the packages the manuscript needs, installed into a session scratch folder under the Round-6 limited build approval; pdfTeX 1.40.29, TL 2026 tlmgr r79639) and `pdflatex`/`bibtex` (4 passes). 20 pages: body (through the last sentence of the Conclusion) ends on **page 7**; Impact Statement and References start on page 7; the one-column appendix starts on page 11. No undefined references or citations; 0 overfull boxes and 0 font-shape warnings after the layout fixes listed in STATUS.md (URL line breaks, figure width, table column spacing and sizes, a split appendix table, number formatting). Pages were rendered locally at 110 dpi and inspected. PDF metadata: title set, author "Anonymous Authors" (from the style), no personal metadata. Nothing was sent to a web compiler. |
 | Mode | anonymous review (`\usepackage{icml2026}`) |
 
 ## Template
@@ -44,7 +44,7 @@ they were not renamed to 2027, and margins and fonts are untouched.
   - double-blind review;
   - US letter paper.
 
-## Build (when a TeX distribution is available)
+## Build (reproduces the shipped PDF)
 
 ```
 cd paper
@@ -53,10 +53,11 @@ latexmk -pdf -interaction=nonstopmode main.tex
 pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```
 
-The same sources are in both packages:
-- `export_bundle/p3_v4_anonymous.tar.gz`: the submission package. It is anonymity-scanned
-  and excludes internal notes.
-- `export_bundle/p3_v4_internal.tar.gz`: the evidence package.
+The same sources and the built PDF are in both v4.1 packages:
+- `export_bundle/p3_v4_1_anonymous.tar.gz`: the submission package. It is scanned for listed
+  identifying strings (a string check, not a proof of anonymity), redacts this repository's
+  commit identifiers, and excludes internal notes.
+- `export_bundle/p3_v4_1_internal.tar.gz`: the evidence package.
 
 Packages beyond the kit: `pgfplots` (with the `groupplots` library), `booktabs`,
 `subcaption`, `cleveref`, `mathtools` and `microtype`. After compiling, check:
@@ -66,9 +67,10 @@ Packages beyond the kit: `pgfplots` (with the `groupplots` library), `booktabs`,
 3. the three wide tables and the figure do not overflow;
 4. the anonymous header is shown.
 
-None of this has been checked yet. In particular the 8-page body limit is unverified: the
-static word count of the body (`main_body_words_approx` in `results/reaggregated/tex_check.json`)
-is only a proxy.
+Checked on the 2026-10-02 build: body ends on page 7 of 20 (limit 8); no undefined references;
+no overfull boxes; tables legible at 100%; anonymous header and line numbers present.
+`main_body_words_approx` in `results/reaggregated/tex_check.json` is only a proxy and is not
+the page check.
 
 ## Provenance of content
 
@@ -83,7 +85,8 @@ is only a proxy.
 - **Claims.** `claims.csv` maps each claim to its evidence files, experiment IDs,
   assumptions and status.
 - **Remaining TODOs.** `\todo{...}` markers remain only for results that do not exist:
-  `P3-REAL-01R-FULL` (all 64 features) and `P3-REAL-02-SEM` (semantic evaluation). They must
+  `P3-REAL-01R-FULL` (all 64 features) and `P3-REAL-02-SEM` (semantic evaluation). They are
+  kept visible on purpose (the study scope is frozen; missing evidence is not hidden) and must
   not be filled by hand.
 - **Real-model numbers.** They come from `results/contract_exec*/`, `results/real01r/`,
   `results/readout_closure/`, `results/real01r_reagg/` and `results/real02_lx/`, through the

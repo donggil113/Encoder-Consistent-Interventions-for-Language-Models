@@ -83,7 +83,10 @@ def fmt(x, nd=3):
         return "--"
     if x != 0 and abs(x) < 1e-6:
         return r"$<\!10^{-6}$"
-    return f"{x:.{nd}g}" if abs(x) >= 1e-3 else f"{x:.1e}"
+    if abs(x) >= 1e-3:
+        return f"{x:.{nd}g}"
+    mant, e = f"{x:.1e}".split("e")
+    return f"${mant}\\times10^{{{int(e)}}}$"
 
 
 # ---------------------------------------------------------------- tables
@@ -394,7 +397,7 @@ def main(argv=None) -> int:
         "FeasTotalPass": str(sum(p for p, _ in feas_counts.values())),
         "FeasTotal": str(sum(n for _, n in feas_counts.values())),
         "VsixRows": str(len(v6)), "VsixMaxErr": f"{numbers['V6_max_local_pred_err']:.1e}",
-        "VfiveMaxDiff": f"{numbers['V5_max_cgls_vs_dense']:.1e}",
+        "VfiveMaxDiff": _sci(numbers['V5_max_cgls_vs_dense']),
         "DenseReluActMed": f"{sizes['relu']['median']:g}", "DenseReluActMin": f"{sizes['relu']['min']:g}",
         "DenseReluActMax": f"{sizes['relu']['max']:g}",
         "DenseJumpActMed": f"{sizes['jumprelu']['median']:g}", "DenseJumpActMin": f"{sizes['jumprelu']['min']:g}",
@@ -499,7 +502,8 @@ def contract_assets(v1_path: str, v2_path: str, paper: str) -> dict:
     ]
     lines = [r"\begin{tabular}{llccc}", r"\toprule", r"Check & Quantity & Tol. & float32 (v1) & float64 (v2) \\", r"\midrule"]
     lines += [" & ".join(r) + r" \\" for r in rows]
-    lines += [r"\midrule", f"Verdict & & & {json.load(open(v1_path))['verdict'].replace('_', ' ')} & {json.load(open(v2_path))['verdict'].replace('_', ' ')} \\\\",
+    vname = lambda v: {"CONTRACT_FAIL_BLOCKED": r"\textsc{fail} (blocked)", "CONTRACT_PASS_FLOAT64": r"\textsc{pass} (float64)"}.get(v, v.replace("_", " "))
+    lines += [r"\midrule", f"Verdict & & & {vname(json.load(open(v1_path))['verdict'])} & {vname(json.load(open(v2_path))['verdict'])} \\\\",
               r"\bottomrule", r"\end{tabular}"]
     open(os.path.join(paper, "tables", "tab_contract_exec.tex"), "w").write("\n".join(lines) + "\n")
     k8 = [p["readout_diff_rel"] for p in v2["K8_non_admissible_readout"]["per_feature"]]
@@ -528,11 +532,33 @@ PILOT_NAMES = {"decoder": "decoder", "decoder_calib_rescaled": "rescaled (weight
 DOSES = ("q50", "q90", "q99", "2xq99")
 
 
+def _num(v, nd=3):
+    """Plain number for text or math mode: no 'e' notation; thousands without exponent; small
+    magnitudes down to 1e-6 as fixed decimals (two significant digits) so that an interval's
+    three numbers share one notation; below 1e-6 as \\times10^{k}."""
+    if v == 0:
+        return "0"
+    if abs(v) >= 1000:
+        return f"{v:.0f}"
+    if abs(v) >= 1e-3:
+        return f"{v:.{nd}g}"
+    if abs(v) >= 1e-6:
+        n = int(-math.floor(math.log10(abs(v)))) + 1
+        return f"{v:.{n}f}"
+    m, e = f"{v:.1e}".split("e")
+    return f"\\ensuremath{{{m}\\times10^{{{int(e)}}}}}"
+
+
+def _scale(c, k):
+    if not c or c.get("estimate") is None:
+        return c
+    return {**c, "estimate": k * c["estimate"], "lo": k * c["lo"], "hi": k * c["hi"]}
+
+
 def _ci(c, nd=3):
     if not c or c.get("estimate") is None:
         return "--"
-    f = lambda v: f"{v:.{nd}g}" if abs(v) >= 1e-3 or v == 0 else f"{v:.1e}"
-    return f"{f(c['estimate'])} [{f(c['lo'])}, {f(c['hi'])}]"
+    return f"{_num(c['estimate'], nd)}\\,\\allowbreak[{_num(c['lo'], nd)}, {_num(c['hi'], nd)}]"
 
 
 def _matched_points(d: str) -> dict:
@@ -572,7 +598,7 @@ def coord_table(paper: str, v1_path: str, v2_path: str) -> None:
          "", "$|\\Delta\\log p|$ " + _sci(b["max_abs_logprob_diff_h_plus_delta_vs_h_plus_Pdelta"])),
         (f"admissible edits ({b['n_rows']} incl.\\ controls)", "raw $-$ canonical",
          f"\\multicolumn{{2}}{{c}}{{at most {_sci(adm)}}}", "", "--"),
-        ("fast vs canonical path, float64", "features / post-edit KL",
+        ("fast vs canonical, float64", "features / post-edit KL",
          _sci(v2["K3_features"]["max_rel_diff"]), _sci(v2["K7_intervention_parity"]["max_kl"]), "pass"),
         ("fast vs canonical path, float32", "next-token $|\\Delta p|$ (tol.\\ $10^{-5}$)",
          "\\multicolumn{2}{c}{" + _sci(v1["K6_logit_parity"]["max_prob_diff"]) + "}", "", "\\textsc{fail} (kept)"),
@@ -593,23 +619,32 @@ def pilot_assets(summary_path: str, paper: str) -> dict:
     cur = {(c["mode"], c["target_kind"], c["dose"], c["method"], c["metric"]): c for c in S["curves"]}
     par = {(p["mode"], p["target_kind"], p["dose"], p["a"], p["b"], p["metric"]): p for p in S["paired"]}
     inf = S["infeasible_counts"]
-    # target-matched table at q99
-    L = [r"\begin{tabular}{llcccccc}", r"\toprule",
-         r"Target & Method & Target err & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ & KL (nats) & $\|\delta\|$ \\",
+    # target-matched tables at q99 with intervals (appendix), split into drift and quality parts
+    # so that each fits the text width at a readable size
+    L = [r"\begin{tabular}{llcccc}", r"\toprule",
+         r"Target & Method & Target err & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ \\",
          r"\midrule"]
+    Q = [r"\begin{tabular}{llcc}", r"\toprule", r"Target & Method & KL$\times10^{3}$ & $\|\delta\|$ \\", r"\midrule"]
     for kind in ("active", "inactive"):
         for m in PILOT_METHODS:
             g = lambda met: cur.get(("target_matched", kind, "q99", m, met))
             st = inf.get(f"target_matched|q99|{m}|{kind}", {})
             n_inf = st.get("INFEASIBLE", 0)
             tag = f"$^{{{n_inf}}}$" if n_inf else ""
-            L.append(f"{kind if m == 'decoder' else ''} & {PILOT_NAMES[m]}{tag} & {_ci(g('target_err_rel'))} & "
-                     f"{_ci(g('drift_orig_active_rel'))} & {_ci(g('drift_newly_active_rel'))} & "
-                     f"{_ci(g('drift_all_nontarget_rel'))} & {_ci(g('kl_next_token'))} & {_ci(g('edit_norm'))} \\\\")
+            te = g("target_err_rel")
+            te_s = "$<10^{-7}$" if te and te.get("hi") is not None and te["hi"] < 1e-7 else _ci(te)
+            lead = f"{kind if m == 'decoder' else ''} & {PILOT_NAMES[m]}{tag}"
+            L.append(f"{lead} & {te_s} & {_ci(g('drift_orig_active_rel'))} & {_ci(g('drift_newly_active_rel'))} & "
+                     f"{_ci(g('drift_all_nontarget_rel'))} \\\\")
+            Q.append(f"{lead} & {_ci(_scale(g('kl_next_token'), 1e3))} & {_ci(g('edit_norm'))} \\\\")
         L.append(r"\midrule")
+        Q.append(r"\midrule")
     L[-1] = r"\bottomrule"
     L.append(r"\end{tabular}")
+    Q[-1] = r"\bottomrule"
+    Q.append(r"\end{tabular}")
     open(os.path.join(paper, "tables", "tab_pilot_matched.tex"), "w").write("\n".join(L) + "\n")
+    open(os.path.join(paper, "tables", "tab_pilot_matched_quality.tex"), "w").write("\n".join(Q) + "\n")
     # medians-only variant for the main text (intervals in the appendix table)
     Lm = [r"\begin{tabular}{llccccccc}", r"\toprule",
           r"Target & Method & matched & $n_{\mathrm{doc}}$ & $D_{\mathrm{orig}}/\alpha$ & $D_{\mathrm{new}}/\alpha$ & $D_{\mathrm{all}}/\alpha$ & KL$\times10^{3}$ & $\|\delta\|$ \\",
@@ -620,7 +655,7 @@ def pilot_assets(summary_path: str, paper: str) -> dict:
             g = lambda met: cur.get(("target_matched", kind, "q99", m, met))
             est = lambda met, sc=1.0: ("--" if not g(met) or g(met).get("estimate") is None
                                         else ("$\\approx 0$" if abs(sc * g(met)["estimate"]) < 1e-9
-                                              else f"{sc * g(met)['estimate']:.3g}"))
+                                              else _num(sc * g(met)["estimate"])))
             n = g("drift_all_nontarget_rel")["n_units"] if g("drift_all_nontarget_rel") else 0
             Lm.append(f"{kind if m == 'decoder' else ''} & {PILOT_NAMES[m]} & {matched.get((kind, m), '--')} & {n} & {est('drift_orig_active_rel')} & "
                       f"{est('drift_newly_active_rel')} & {est('drift_all_nontarget_rel')} & {est('kl_next_token', 1e3)} & "
@@ -630,15 +665,15 @@ def pilot_assets(summary_path: str, paper: str) -> dict:
     Lm.append(r"\end{tabular}")
     open(os.path.join(paper, "tables", "tab_pilot_matched_median.tex"), "w").write("\n".join(Lm) + "\n")
     # paired LN - decoder by dose (target-matched)
-    P = [r"\begin{tabular}{llccccc}", r"\toprule",
-         r"Target & Dose & $n_{\mathrm{doc}}$ & $\Delta D_{\mathrm{all}}$ & $\Delta D_{\mathrm{new}}$ & $\Delta D_{\mathrm{orig}}$ & $\Delta$KL \\",
+    P = [r"\begin{tabular}{llcccc}", r"\toprule",
+         r"Target & Dose & $n_{\mathrm{doc}}$ & $\Delta D_{\mathrm{all}}$ & $\Delta D_{\mathrm{new}}$ & $\Delta$KL \\",
          r"\midrule"]
     for kind in ("active", "inactive"):
         for dose in DOSES:
             g = lambda met: par.get(("target_matched", kind, dose, "jacobian_ln", "decoder", met))
             n = g("drift_all_nontarget_rel")["n_units"] if g("drift_all_nontarget_rel") else 0
             P.append(f"{kind if dose == 'q50' else ''} & {dose} & {n} & {_ci(g('drift_all_nontarget_rel'))} & "
-                     f"{_ci(g('drift_newly_active_rel'))} & {_ci(g('drift_orig_active_rel'))} & {_ci(g('kl_next_token'))} \\\\")
+                     f"{_ci(g('drift_newly_active_rel'))} & {_ci(_scale(g('kl_next_token'), 1e3))} \\\\")
         P.append(r"\midrule")
     P[-1] = r"\bottomrule"
     P.append(r"\end{tabular}")
@@ -943,6 +978,18 @@ def space_assets(d: str, paper: str) -> dict:
               "SpCtrlSame": f"{S['control_mean_only']['identical_continuation_to_no_edit']}/{S['control_mean_only']['n']}",
               "SpCtrlKL": _sci(S["control_mean_only"]["max_kl"]),
               "SpFailed": str(sum(v.get("FAILED", 0) for v in S["row_status_counts"].values()))})
+    sb = os.path.join(d, "sensitivity_bounds.json")
+    if os.path.exists(sb):  # model-based sensitivity (labelled as such in the text)
+        B = json.load(open(sb))
+        pp = B["primary_pair"]
+        M["SpBoundOne"] = f"{100 * pp['one_sided_95_upper_on_discordance_probability']:.1f}"
+        M["SpBoundTwo"] = f"{100 * pp['two_sided_95_clopper_pearson']['upper']:.1f}"
+        M["SpDiscPrim"] = str(pp["discordant_observed"])
+        dm = B["diffmean_vs_no_edit"]
+        M["SpDmDisc"] = str(dm["discordant_observed"])
+        M["SpDmNet"] = f"{dm['net']:+d}"
+        M["SpDmCPLo"] = f"{100 * dm['two_sided_95_clopper_pearson_on_discordance_probability']['lower']:.1f}"
+        M["SpDmCPHi"] = f"{100 * dm['two_sided_95_clopper_pearson_on_discordance_probability']['upper']:.1f}"
     ph = os.path.join(d, "posthoc_continuation_change.json")
     if os.path.exists(ph):  # post-hoc descriptive (labelled as such in the text)
         H = json.load(open(ph))

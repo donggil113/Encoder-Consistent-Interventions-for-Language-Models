@@ -1,0 +1,31 @@
+{
+ "label": "MODEL_BASED_SENSITIVITY (derived after the frozen summary; not part of the confirmatory analysis)",
+ "model": "the 32 test articles are treated as independent, identically distributed draws of a Bernoulli discordance indicator (LN and decoder any-hit disagree). This assumption is not verified: articles are a fixed seeded order of WikiText-103 test articles, 28 of 32 were edit sites in the REAL-01R internal pilot, and one prompt per article was used. The bounds below are a sensitivity statement under that model, not a population estimate.",
+ "primary_pair": {
+  "a": "jacobian_ln",
+  "b": "decoder",
+  "n_docs": 32,
+  "discordant_observed": 0,
+  "one_sided_95_upper_on_discordance_probability": 0.0893681989862648,
+  "two_sided_95_clopper_pearson": {
+   "lower": 0.0,
+   "upper": 0.10888116067935288
+  },
+  "formula_one_sided": "1 - 0.05^(1/32)",
+  "formula_two_sided_upper": "1 - 0.025^(1/32)",
+  "relation": "|E[hit_a - hit_b]| <= Pr(discordance) under the same model; the bound constrains the discordance probability, it is not an observed difference"
+ },
+ "diffmean_vs_no_edit": {
+  "gained": 2,
+  "lost": 1,
+  "discordant_observed": 3,
+  "net": 1,
+  "two_sided_95_clopper_pearson_on_discordance_probability": {
+   "lower": 0.01976718017328486,
+   "upper": 0.25022695068379475
+  },
+  "note": "three discordant articles, net +1; descriptive (secondary comparison)"
+ },
+ "bootstrap_note": "the document-bootstrap interval of the primary mean difference is [0, 0] because every observed per-article difference is 0; a degenerate interval is not evidence of equivalence",
+ "source": "results/real02_space/summary.json (unchanged)"
+}

@@ -1,3 +1,11 @@
 __pycache__/
 *.pyc
 /results/raw_dev/
+# LaTeX build artifacts (the built paper/main.pdf is kept)
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.toc
+paper/missfont.log
