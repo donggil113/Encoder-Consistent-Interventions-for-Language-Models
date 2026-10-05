@@ -670,5 +670,33 @@
    "anonymous": "export_bundle/p3_v4_1_anonymous.tar.gz (113 files, PDF included, commit ids redacted in 4 files, standalone rebuild verified)",
    "internal": "export_bundle/p3_v4_1_internal.tar.gz (117 files)"
   }
+ },
+ "seventh_session": {
+  "date": "2026-10-05",
+  "head_at_start": "9956c8f9e5a9483a893aa7139306221bfc5f66cd",
+  "decision": "results frozen; external read review requested (UNASSIGNED)",
+  "changes": "documents only (paper/main.tex wording, paper/README.md, paper/claims.csv notes, STATUS, RESEARCH_PACKET, run_manifest); no code, config, raw or number changed",
+  "manuscript": {
+   "version": "v4.2",
+   "main_pdf_sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8",
+   "main_tex_sha256": "46fa4fc929a24b9ee2c8a3eaaefaf2fb8c608276b69c0d20e9133cceb10c860d",
+   "pages": 20,
+   "body_end_page": 7,
+   "todo_markers_in_body": 0
+  },
+  "review": {
+   "reviewer_agents": 0,
+   "external_reader": "UNASSIGNED",
+   "questions": 3
+  },
+  "not_done": [
+   "generation",
+   "new topic/feature/dose/KL",
+   "semantic judge",
+   "model/data/install",
+   "statistics recomputation",
+   "full manuscript re-review",
+   "per-page subagents"
+  ]
  }
 }

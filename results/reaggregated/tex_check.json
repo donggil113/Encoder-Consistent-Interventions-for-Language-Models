@@ -68,7 +68,6 @@
     "sec:certify",
     "sec:conclusion",
     "sec:intro",
-    "sec:limitations",
     "sec:real02",
     "sec:related",
     "sec:setup",
@@ -186,11 +185,8 @@
   "unbalanced_environments": {},
   "identifying_strings_found": [],
   "accepted_option_used": false,
-  "todo_markers": [
-    "P3-REAL-01R-FULL: all 64 calibration\nfeatures, same frozen doses, same document-paired analysis",
-    "P3-REAL-02-SEM: an independent semantic evaluation; not run"
-  ],
-  "main_body_words_approx": 4314,
+  "todo_markers": [],
+  "main_body_words_approx": 4406,
   "page_estimate_note": "word count includes table/figure code tokens loosely; true page count needs compilation",
   "ok": true
 }

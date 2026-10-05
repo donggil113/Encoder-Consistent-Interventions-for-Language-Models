@@ -1,8 +1,78 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-10-02 (sixth session, Round 6, option A). Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-10-05 (seventh session, Round 7). Branch: `claude/magical-bell-8vyrpd`.
 
-## Sixth session summary (Round 6, option A; read first)
+## Seventh session summary (Round 7; read first)
+
+Checked at start: HEAD `9956c8f` equal to origin; clean tree; `paper/main.pdf` sha256
+`2303c528…` as reported; the session TeX install and the page renders still present; no
+CLAUDE.md in the repository; `/nvmedata` absent (not created). Verdicts kept:
+**STUDY_SCOPE_FROZEN / METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT**. Freezing the results and
+asking for an external read are not alternatives: the results are frozen, and the manuscript
+can be read externally; neither makes it submission-ready.
+
+**Not done (by instruction):** no generation, topic, feature, dose/KL, semantic judge, model,
+data, installation, retraining, statistics recomputation, fourth full manuscript review or
+per-page subagent pass. No reviewer agents were spawned; this round used my own read plus the
+existing automatic checks (tex_check, build log, render script).
+
+**One editing pass (v4.2; wording only, no number, table or result changed).**
+1. Core claims re-read against the frozen scope: C41 (coordinate caveat resting on a known
+   LayerNorm property; the text says "a measurement caveat, not a new property"), C38
+   (conditional fidelity of 8 selected features on a full common denominator), C48 (sparse
+   lexical proxy null). They match; no claim text changed.
+2. The two remaining `\todo` markers (P3-REAL-01R-FULL, P3-REAL-02-SEM) are follow-ups
+   outside the frozen scope, not evidence the three core claims need: C38 is stated as
+   conditional on the 8-feature pilot and C48 as lexical. They stay as internal TODOs
+   (STATUS, RESEARCH_PACKET, claims.csv notes) and appear in the manuscript only as a new
+   "Not evaluated" limitation; nothing was filled in.
+3. Unchanged: 0/32 discordance, 8.94% / 10.89% model-based bounds, 28/32 reused articles,
+   3 DiffMean discordant articles (net +1), the "All-Star" hit.
+4. Checked: no sentence says LN is a better steering method or that steering is ineffective.
+   Internal drift reduction and the external lexical null both stay. The words "beats", "won"
+   and "better" occur only as quantified instance counts in the toy and synthetic-proxy
+   results, with the proxy caption stating they are fixed by construction.
+5. The opening sentences describe the observation (steering reports an edit as a feature
+   change; we check the report in three steps) and separate theory (Prop. 4.1 with its GPT-2
+   assumptions), internal measurement (Sec. 5) and behavior (Sec. 6). One sentence was added
+   to Sec. 6.2 stating the unit, the primary estimand and the secondary status of everything
+   else.
+
+**Build (once, because sentences changed):** `paper/main.pdf` v4.2, sha256
+`24ced5541de77435…`, 20 pages, Conclusion ends on page 7, appendix starts on page 11, 0
+overfull boxes, 0 undefined references, 0 font warnings, author metadata "Anonymous Authors".
+Changed pages 5–7 were rendered and read; other pages were not re-inspected (their content
+did not change; the earlier full inspection applies to the v4.1 hash only). Body word count
+≈ 4,400 (proxy, not the page check).
+
+**Packages (existing generator, re-run):** `export_bundle/p3_v4_1_anonymous.tar.gz` and
+`p3_v4_1_internal.tar.gz` now hold the v4.2 sources and PDF (the file names keep the v4_1
+tag; the manifests carry the hashes). The anonymous package was unpacked and compared with
+the README list: every listed item present, internal files absent, no repository commit id
+or identifying string found by the scan, and it rebuilds standalone to the same 20 pages.
+
+**External read review:** three questions and the status **UNASSIGNED** are in
+`paper/README.md`. No one has been contacted; no acceptance or independent verification is
+claimed.
+
+**File hashes (v4.2):** main.tex `46fa4fc929a24b9e…`, claims.csv
+`3ad8938e27bee75f…`, paper/README.md `95557a9d8ae37dd4…`. Executable code
+unchanged this round (`src/`, `configs/`, `tests/` untouched); only documents changed.
+
+### Seventh session: cost ledger
+
+| step | wall | notes |
+|---|---|---|
+| state check, reads, edits | interactive | no agents |
+| pdflatex ×3 + bibtex (v4.2) | 7 s | reused the session TeX install; no network |
+| render 20 pages | ≈ 1.5 s | pymupdf, local |
+| packages (anonymous + internal) | ≈ 6 s | existing generator |
+| anonymous package unpack + standalone rebuild | ≈ 12 s | |
+| network / installs / GPU | 0 | |
+
+CPU-seconds were not measured separately (unmeasured).
+
+## Sixth session summary (previous)
 
 Checked at start: HEAD `09db0f8` equal to origin; clean tree; venv and HF cache present; no
 TeX; `/nvmedata` absent (not created). Decision A: no behavioural extension (B not approved),

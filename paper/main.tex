@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Manuscript v4.1 (P3). TARGET_YEAR = 2027, TEMPLATE_YEAR = 2026, SUBMISSION_READY = false.
+% Manuscript v4.2 (P3). TARGET_YEAR = 2027, TEMPLATE_YEAR = 2026, SUBMISSION_READY = false.
 % The three official ICML 2027 URLs (call for papers, author instructions, style archive)
 % returned 404 on 2026-09-26 and again on
 % 2026-09-27 (status check only), and the 2026-09-28 review obtained no ICML 2027 Author
@@ -9,8 +9,9 @@
 % Order (v4): (a) raw vs canonical coordinates -> (b) admissible feature realization with its
 % full denominator -> (c) lexical change / quality (P3-REAL-02-SPACE).
 % Every number in the text comes from generated_numbers.tex or tables/*.tex, which
-% src/saeedit/paper_assets.py writes from results/. Missing results are marked
-% \todo{EXPERIMENT_ID: required evidence}.
+% src/saeedit/paper_assets.py writes from results/. Follow-up experiments outside the frozen
+% scope (P3-REAL-01R-FULL, P3-REAL-02-SEM) are recorded in the internal notes and appear
+% here only as "not evaluated" limitations; no \todo marker remains in the body.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass{article}
@@ -502,8 +503,8 @@ exploratory settings rather than the dense pre-registered one.
 This fits the regime hypothesis stated after the exploratory toy study. It is a pilot with
 \PilotFeatures{} features and one layer, however, so it is consistent with that hypothesis
 rather than a test of it. The full calibration set of 64 features and other layers or SAE
-families are needed before any regime claim. \todo{P3-REAL-01R-FULL: all 64 calibration
-features, same frozen doses, same document-paired analysis}.
+families would be needed before any regime claim; they were not evaluated
+(\cref{sec:limitations}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Lexical Change and Quality}
@@ -539,7 +540,9 @@ objective and not an independent semantic check. Support was \SpPosWin{} of \SpW
 calibration windows in \SpPosDocs{} of \SpCalDocs{} articles (minimum 20 windows), and
 \SpStarWin{} of those windows contain the polysemous ``star''. Every actor, feature
 \SpFeature{}, received the same KL-capped budget of $0.1\times$ the median norm
-($\kappa = \SpKappa$ nats). All \SpAttempted{} test articles attempted gave a prompt, and no
+($\kappa = \SpKappa$ nats). The unit is the test article; the primary estimand, fixed in
+advance, is the mean over articles of any-hit(\LN) minus any-hit(decoder) at those budgets;
+every other comparison and metric is secondary and descriptive. All \SpAttempted{} test articles attempted gave a prompt, and no
 row failed. \SpOverlapPilot{} of them had served as edit sites in the internal pilot, so they
 are held out from calibration but not unseen by this project.
 
@@ -573,7 +576,8 @@ budget. None of this moved lexicon occurrence. The mean-only control reproduced 
 unedited continuation (\SpCtrlSame). At this one KL cap, feature edits changed internal
 readouts and surface text but not space-lexicon occurrence, and the pilot cannot separate
 \LN{} from the decoder. It says nothing about larger budgets, other features, other SAEs or
-other behaviors. \todo{P3-REAL-02-SEM: an independent semantic evaluation; not run}
+other behaviors, and the generated text was not evaluated semantically
+(\cref{sec:limitations}).
 
 \begin{table*}[t]
   \caption{Space-lexicon pilot (\SpDocs{} held-out WikiText-103 articles, one prompt each,
@@ -616,6 +620,11 @@ other behaviors. \todo{P3-REAL-02-SEM: an independent semantic evaluation; not r
   \item \emph{The sensitivity bounds are model-based.} \SpOverlapPilot{} of the \SpDocs{}
   test articles had been edit sites in the internal pilot, and the independence model behind
   the discordance bounds is unverified.
+  \item \emph{Not evaluated.} Two follow-ups lie outside the frozen scope of this study and
+  were not run: the fidelity pilot over the full set of 64 calibration features (and other
+  layers or SAE families), and an independent semantic evaluation of the generated text. The
+  conditional fidelity claim and the lexical null do not depend on them; a regime claim or a
+  semantic claim would.
   \item \emph{Other choices.} The Euclidean norm is a modeling choice
   \citep{park2024linear}. JumpReLU and TopK families \citep{lieberum2024gemma} add the
   boundary effects of \cref{prop:jump} and are not covered.

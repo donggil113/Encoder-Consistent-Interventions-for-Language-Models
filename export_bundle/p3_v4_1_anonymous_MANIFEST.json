@@ -1,8 +1,8 @@
 {
  "package": "export_bundle/p3_v4_1_anonymous.tar.gz",
  "mode": "anonymous",
- "sha256": "0ea440f38b8a32bbcb17c49ec0525d1f5220415bf8024a4f493e5db6f7a15b31",
- "bytes": 3981214,
+ "sha256": "e10c31c3625fa3239c7b54c4d9e402ce39141897eb9e36367e73bcfebfed77e6",
+ "bytes": 3981841,
  "n_files": 113,
  "files": [
   {
@@ -92,8 +92,8 @@
   },
   {
    "path": "paper/claims.csv",
-   "bytes": 20013,
-   "sha256": "c91f56ec4899ddbb57776e4c277bd10043868ca6dab4be443ed339dd71849204"
+   "bytes": 20646,
+   "sha256": "0f8731f08ee3e3858ccc16bb462ce88c72e96a6e952a82468e3e9b3c92a52ecb"
   },
   {
    "path": "paper/fancyhdr.sty",
@@ -137,13 +137,13 @@
   },
   {
    "path": "paper/main.pdf",
-   "bytes": 415834,
-   "sha256": "2303c5287c83b0e2e0f6a1d7d5b7fa00ec8f178c75403dd4023b2c47926d02a9"
+   "bytes": 416464,
+   "sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8"
   },
   {
    "path": "paper/main.tex",
-   "bytes": 70171,
-   "sha256": "29d316d3699bae8f8ded9cad40be573754edc66b770047648ca27957c75b84e6"
+   "bytes": 70886,
+   "sha256": "46fa4fc929a24b9ee2c8a3eaaefaf2fb8c608276b69c0d20e9133cceb10c860d"
   },
   {
    "path": "paper/references.bib",
@@ -292,8 +292,8 @@
   },
   {
    "path": "results/reaggregated/tex_check.json",
-   "bytes": 4493,
-   "sha256": "dbfde568dab5c053175540fedb7c7baaef9adce8684105f1d3dbac021e5ae0b8"
+   "bytes": 4297,
+   "sha256": "7bb41ccee1c40cba0473891442f099eacab58a74fe845961a0ef6cd423d74001"
   },
   {
    "path": "results/real01r/calibration_frozen.json",
@@ -609,5 +609,5 @@
   "latexmk -pdf -interaction=nonstopmode main.tex",
   "# or: pdflatex main && bibtex main && pdflatex main && pdflatex main"
  ],
- "seconds": 4.27
+ "seconds": 5.47
 }

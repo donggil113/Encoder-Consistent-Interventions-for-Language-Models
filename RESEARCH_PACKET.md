@@ -733,3 +733,11 @@ Choose the paper's scope. The two options are exclusive in this round's budget.
 - Reopening the behavioural question (not planned here) needs: a behavioural label defined
   independently of direction selection; data separated from calibration; adequate
   precision; a question posed against the closest prior work.
+
+## 16. Round 7: results frozen; external read review (UNASSIGNED)
+
+- Verdicts unchanged. The two remaining manuscript TODOs (P3-REAL-01R-FULL, P3-REAL-02-SEM)
+  are follow-ups outside the frozen scope; they remain internal TODOs here and are a
+  "Not evaluated" limitation in the manuscript (v4.2, wording only).
+- Three questions for an external reader are in `paper/README.md`; no reader assigned.
+- Research direction is decided separately after that read; no further automatic research.

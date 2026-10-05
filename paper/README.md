@@ -1,6 +1,8 @@
-# Manuscript v4.1: "Auditing Sparse Autoencoder Feature Edits in GPT-2 Small: Coordinates, Fidelity, and a Lexical Pilot"
+# Manuscript v4.2: "Auditing Sparse Autoencoder Feature Edits in GPT-2 Small: Coordinates, Fidelity, and a Lexical Pilot"
 
-v4 condenses v3 (edited in place, not regenerated). It keeps three core claims (see
+v4.2 (2026-10-05) changes only wording: the two `\todo` markers in the body were replaced by a
+"Not evaluated" limitation, and the primary estimand is stated in Section 6.2. No number,
+table or result changed. v4 condenses v3 (edited in place, not regenerated). It keeps three core claims (see
 `claims.csv`, column `core`):
 1. the readout convention, a measurement caveat resting on a standard LayerNorm property;
 2. conditional same-layer fidelity with its full denominator;
@@ -15,7 +17,7 @@ wedding branch and the denominator status table.
 | TARGET_YEAR | 2027 (ICML) |
 | TEMPLATE_YEAR | 2026 |
 | SUBMISSION_READY | **false** |
-| Compile status | **BUILT (v4.1, 2026-10-02)** with a minimal TeX Live (scheme-basic + the packages the manuscript needs, installed into a session scratch folder under the Round-6 limited build approval; pdfTeX 1.40.29, TL 2026 tlmgr r79639) and `pdflatex`/`bibtex` (4 passes). 20 pages: body (through the last sentence of the Conclusion) ends on **page 7**; Impact Statement and References start on page 7; the one-column appendix starts on page 11. No undefined references or citations; 0 overfull boxes and 0 font-shape warnings after the layout fixes listed in STATUS.md (URL line breaks, figure width, table column spacing and sizes, a split appendix table, number formatting). Pages were rendered locally at 110 dpi and inspected. PDF metadata: title set, author "Anonymous Authors" (from the style), no personal metadata. Nothing was sent to a web compiler. |
+| Compile status | **BUILT (v4.2, 2026-10-05; wording-only change from the v4.1 build of 2026-10-02)** with a minimal TeX Live (scheme-basic + the packages the manuscript needs, installed into a session scratch folder under the Round-6 limited build approval; pdfTeX 1.40.29, TL 2026 tlmgr r79639) and `pdflatex`/`bibtex` (4 passes). 20 pages: body (through the last sentence of the Conclusion) ends on **page 7**; Impact Statement and References start on page 7; the one-column appendix starts on page 11. No undefined references or citations; 0 overfull boxes and 0 font-shape warnings after the layout fixes listed in STATUS.md (URL line breaks, figure width, table column spacing and sizes, a split appendix table, number formatting). Pages were rendered locally at 110 dpi and inspected. PDF metadata: title set, author "Anonymous Authors" (from the style), no personal metadata. Nothing was sent to a web compiler. |
 | Mode | anonymous review (`\usepackage{icml2026}`) |
 
 ## Template
@@ -84,10 +86,29 @@ the page check.
   records. No venue was added without an official source.
 - **Claims.** `claims.csv` maps each claim to its evidence files, experiment IDs,
   assumptions and status.
-- **Remaining TODOs.** `\todo{...}` markers remain only for results that do not exist:
-  `P3-REAL-01R-FULL` (all 64 features) and `P3-REAL-02-SEM` (semantic evaluation). They are
-  kept visible on purpose (the study scope is frozen; missing evidence is not hidden) and must
-  not be filled by hand.
+- **Follow-ups outside the frozen scope.** `P3-REAL-01R-FULL` (all 64 calibration
+  features) and `P3-REAL-02-SEM` (semantic evaluation) are recorded as internal TODOs
+  (STATUS.md, RESEARCH_PACKET.md, claims.csv notes). In the manuscript they appear only as the
+  "Not evaluated" limitation; they are not required by the three core claims, and they must
+  not be filled in by hand.
 - **Real-model numbers.** They come from `results/contract_exec*/`, `results/real01r/`,
   `results/readout_closure/`, `results/real01r_reagg/` and `results/real02_lx/`, through the
   same script.
+
+## External read review (UNASSIGNED)
+
+The results are frozen (STUDY_SCOPE_FROZEN; METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT).
+An external read of the manuscript by a non-author is recommended quality control; it is not
+a separate certification that ICML requires of every author, and it does not by itself make
+the manuscript submission-ready (SUBMISSION_READY stays false). No reviewer has been
+contacted; status **UNASSIGNED**. Target: `paper/main.pdf` (v4.2; sha256 in STATUS.md).
+
+Three questions for the reader:
+
+1. Is the coordinate-handling caveat (canonical readout $E(P(h+\delta))$ versus the raw
+   $E(x+\delta)$) worth generalising beyond the prior implementations and literature it rests
+   on, or is it adequately stated as a measurement caveat?
+2. Does the conditional same-layer fidelity measurement (8 features, 54 documents, full
+   common denominator) provide a meaningful ML insight?
+3. Does the paper make any behavioral claim beyond the sparse lexical null (0 of 32
+   discordant articles at one KL cap)?
