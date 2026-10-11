@@ -61,6 +61,14 @@ The same sources and the built PDF are in both v4.1 packages:
   commit identifiers, and excludes internal notes.
 - `export_bundle/p3_v4_1_internal.tar.gz`: the evidence package.
 
+Delivered copies (R8, 2026-10-11; no rebuild): `deliverables/P3_v4.2_0f5b60e.pdf` is a
+byte-identical copy of `paper/main.pdf` at commit 0f5b60e (sha256 `24ced5541de77435…`);
+`deliverables/P3_source.zip` holds the manuscript sources with a `BUILD.md`, and
+`deliverables/P3_delivery.json` records commit, hashes, pages, build commands, pages viewed and
+study status. The `p3_v4_1_*` package names are historical; their content is v4.2. The zip was
+built standalone in a scratch folder with `-halt-on-error -no-shell-escape` (same 20 pages,
+identical extracted text); that check did not replace `paper/main.pdf`.
+
 Packages beyond the kit: `pgfplots` (with the `groupplots` library), `booktabs`,
 `subcaption`, `cleveref`, `mathtools` and `microtype`. After compiling, check:
 

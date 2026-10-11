@@ -1,0 +1,461 @@
+{
+ "run_id": "P3-R8-DELIVERY-2026-10-11",
+ "project": "P3",
+ "manuscript_version": "v4.2",
+ "date": "2026-10-11",
+ "purpose": "Deliver the frozen v4.2 manuscript PDF as user deliverables (byte copy, source zip, delivery record). No research stage exists in this run.",
+ "frozen": "written before any stage ran; only the evidence block is appended by the runner",
+ "source": {
+  "repository": "donggil113/Encoder-Consistent-Interventions-for-Language-Models",
+  "branch": "claude/magical-bell-8vyrpd",
+  "head": "0f5b60e539f56e74942e1170e42c95ba9d092e9d",
+  "head7": "0f5b60e",
+  "origin_head": "0f5b60e539f56e74942e1170e42c95ba9d092e9d",
+  "head_equals_origin": true,
+  "tree": "clean at freeze"
+ },
+ "inputs_primary": {
+  "pdf": "paper/main.pdf",
+  "tex": "paper/main.tex"
+ },
+ "inputs": {
+  "paper/README.md": {
+   "sha256": "9780bc7dc93f698c0136de1c8038e194b429f302121ba0b86f07439a5bcb8724",
+   "bytes": 6869
+  },
+  "paper/algorithm.sty": {
+   "sha256": "93fd0eb31c112eb405833db8f1d7f5d238c7e691b1c05680d7276e68f36d564a",
+   "bytes": 2223
+  },
+  "paper/algorithmic.sty": {
+   "sha256": "48d18794a5d97c0479a588cc2eac0917992feb9da83acc4631b8f55757d80f9b",
+   "bytes": 7414
+  },
+  "paper/claims.csv": {
+   "sha256": "3ad8938e27bee75f2760f78c62162883c8a5303c63cc9cef63df82fd619abc95",
+   "bytes": 20643
+  },
+  "paper/fancyhdr.sty": {
+   "sha256": "9130c52f91087abc6d223164ffa587e207e3257fcbcd069ef09ecb5391043f14",
+   "bytes": 31715
+  },
+  "paper/figures/alpha_curves.dat": {
+   "sha256": "a3e6ea6e9d0c39725044c429ffeabaf4d2700e1dc4d42d6f2db86fef096046d8",
+   "bytes": 778
+  },
+  "paper/figures/extproxy.dat": {
+   "sha256": "20b18ad16fb2a98a7fad801dcb5cd371e147981a5a3761bd4591af7756ba92ba",
+   "bytes": 162
+  },
+  "paper/figures/norm_budget.dat": {
+   "sha256": "b7c37bf696fc9786ed37f82c7818cac9928b2b9f909f3ac241432526fbc5e383",
+   "bytes": 349
+  },
+  "paper/figures/pilot_dose.dat": {
+   "sha256": "606358198f44e608293ab5a539d67ad20621bc144efa98d3cb3e8343199b5065",
+   "bytes": 1102
+  },
+  "paper/generated_numbers.tex": {
+   "sha256": "2523a055d6f509cc2f0b97c4f1cb25443b0c59b7ef85723928d5f75d9f898a10",
+   "bytes": 10549
+  },
+  "paper/icml2026.bst": {
+   "sha256": "0ec3d5eb9b02efb7e0b44a32f3775882f42a743d0bdc618f34e6936309b98764",
+   "bytes": 27147
+  },
+  "paper/icml2026.sty": {
+   "sha256": "7cdcf90f6a59c5219e7f15c88f7ed09fcaf598dad91e6cdddc4dc3cb0e397a95",
+   "bytes": 27344
+  },
+  "paper/main.pdf": {
+   "sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8",
+   "bytes": 416464,
+   "git_blob_sha1": "f948c007dbb80c2326d55d2438c4b7539546e2f5",
+   "pages": 20,
+   "body_end_page": 7,
+   "appendix_start_page": 11,
+   "recorded_in": [
+    "STATUS.md (seventh session)",
+    "run_manifest.json seventh_session.manuscript",
+    "paper/README.md compile status"
+   ]
+  },
+  "paper/main.tex": {
+   "sha256": "46fa4fc929a24b9ee2c8a3eaaefaf2fb8c608276b69c0d20e9133cceb10c860d",
+   "bytes": 70886
+  },
+  "paper/references.bib": {
+   "sha256": "e22f0e3edc2a01c350cc4897fdda18474c9c9ea90abcec801d78e5f216982c4a",
+   "bytes": 19488
+  },
+  "paper/tables/tab_activeset_all.tex": {
+   "sha256": "fdc859d91bb6bda57c405205a75690aed4159eca2dddfd40a2748770a82b2e0c",
+   "bytes": 2068
+  },
+  "paper/tables/tab_activeset_relu.tex": {
+   "sha256": "b1fe3fd9bb14efbd0dd1841f2a30c4008a6431c91c7aa180229a0251439694f2",
+   "bytes": 866
+  },
+  "paper/tables/tab_contract_exec.tex": {
+   "sha256": "32e61d29f68c863c4b7e442aa0b21c0852c55d4f4fe7ab30958474300bf5c638",
+   "bytes": 1761
+  },
+  "paper/tables/tab_coord.tex": {
+   "sha256": "74e0ae2d880e8ee71786a9125c1d503c1cf3ad71ea8bd897ea36ab84ae1416fd",
+   "bytes": 916
+  },
+  "paper/tables/tab_extproxy.tex": {
+   "sha256": "c19739913abc986a7933f8c8be3b79df0828c30d3f608e55cc8d8eee2bd3d282",
+   "bytes": 780
+  },
+  "paper/tables/tab_feasibility.tex": {
+   "sha256": "f4c7109e43c63ea55962e62bc65d70d31785b54de7c96fd59dff052a90bd1fab",
+   "bytes": 560
+  },
+  "paper/tables/tab_linear.tex": {
+   "sha256": "0ffaef43b4a08557069a0e27ca160935506d227bf3d178950d9baeda4c0b8fa4",
+   "bytes": 996
+  },
+  "paper/tables/tab_matched_denominators.tex": {
+   "sha256": "7c8743f0c127011f1df1cc7fc79c4325e50c7d2b8826fd33dc68296619df33f2",
+   "bytes": 506
+  },
+  "paper/tables/tab_norm_budget.tex": {
+   "sha256": "5030acb424672e7f1664cfd032c639d743de13ba5ef45ce3d0d96e955d28d619",
+   "bytes": 477
+  },
+  "paper/tables/tab_pilot_equalnorm.tex": {
+   "sha256": "a850da3de340f4102d3d766f8626961f1c2bbb09d69bbd93885c44867b526029",
+   "bytes": 1146
+  },
+  "paper/tables/tab_pilot_matched.tex": {
+   "sha256": "f3740032986f0d79fcdbc55295a5dc866da30a5b44535b0ae00d649f50cc9610",
+   "bytes": 1714
+  },
+  "paper/tables/tab_pilot_matched_median.tex": {
+   "sha256": "b6a2904dea3d1f6cbea33a69dbd2e2ddc43eb4f9864aab27e7b6153c7cb7aa2e",
+   "bytes": 951
+  },
+  "paper/tables/tab_pilot_matched_quality.tex": {
+   "sha256": "a54f50675e6c9cd7e9f6b17adfc3ac612733df4f73a2c746fce3f4b1af6ff398",
+   "bytes": 971
+  },
+  "paper/tables/tab_pilot_paired.tex": {
+   "sha256": "2f807eb449468949cf68e3f1caad07e9348bbe85d843a94abca3f4d513bf1c2b",
+   "bytes": 1233
+  },
+  "paper/tables/tab_space.tex": {
+   "sha256": "a222c799b34886cfc1ebfd0b437b91ac45255651584ae5292ee667e3577ff675",
+   "bytes": 689
+  },
+  "paper/tables/tab_space_paired.tex": {
+   "sha256": "27e1210a418d55bb47a83391be250b41df04869aef4cc2e5853f771e2e7a63c2",
+   "bytes": 999
+  },
+  "paper/tables/tab_sparsity_exploratory.tex": {
+   "sha256": "4b4d1cd6bf2e9f500c5ef4ddbde5cbff654fcc9ac3fd04f8e894a41333815d2e",
+   "bytes": 1733
+  },
+  "src/saeedit/deliver.py": {
+   "sha256": "f3ac67a43441f4f8e0a11e0984b2d29707a456e1f55eaf6a2c9b6e2e6ee336e3",
+   "bytes": 17539
+  },
+  "internal/anonymity_patterns.txt": {
+   "sha256": "da024a70c08e12a5702261a347145c9c98bfb817641f5c9b975b6a92495c5b34",
+   "bytes": 287
+  },
+  "internal/own_commits.txt": {
+   "sha256": "fe093d4b2f45c81ed68ffe53be0a4fbe91d4a591cb35b143f1e33e93a1ba7fd7",
+   "bytes": 931
+  }
+ },
+ "pdf_markers": {
+  "conclusion_last_sentence": "remains open.",
+  "appendix_start": "A. Standard Facts"
+ },
+ "deliverables": {
+  "dir": "deliverables",
+  "pdf_name": "P3_v4.2_0f5b60e.pdf",
+  "zip_name": "P3_source.zip",
+  "record_name": "P3_delivery.json",
+  "build_md_name": "P3_BUILD.md"
+ },
+ "allowed_stages": [
+  {
+   "id": "verify_pdf",
+   "what": "PDF header, bytes, sha256, git blob, page count and body-end page against the recorded v4.2 facts; every input hash",
+   "runs": 1
+  },
+  {
+   "id": "copy_pdf",
+   "what": "byte copy of paper/main.pdf to deliverables/<pdf_name>; sha256 equality",
+   "runs": 1
+  },
+  {
+   "id": "source_zip",
+   "what": "deliverables/P3_source.zip from the listed tracked paper sources plus a generated BUILD.md; deterministic zip; identifying-string report (no redaction)",
+   "runs": 1
+  },
+  {
+   "id": "build_check",
+   "what": "optional: unzip into the session scratch folder and build with -halt-on-error -no-shell-escape; compare page count and per-page text with the delivered PDF; paper/main.pdf is never rebuilt or replaced",
+   "runs": 1,
+   "max_cpu_s": 300,
+   "optional": true
+  },
+  {
+   "id": "delivery_record",
+   "what": "deliverables/P3_delivery.json with commit, hashes, pages, style, build commands, pages viewed, research status, file list",
+   "runs": 1
+  },
+  {
+   "id": "records",
+   "what": "by hand: STATUS.md eighth session, run_manifest.json eighth_session, one delivery note in paper/README.md and RESEARCH_PACKET.md",
+   "runs": 1
+  },
+  {
+   "id": "commit_push",
+   "what": "one ordinary commit on the current branch; push under the already granted branch policy",
+   "runs": 1
+  }
+ ],
+ "forbidden_in_this_run": [
+  "new topic, dose, KL, feature, model, semantic judge, generation, activation check, readout-closure rerun",
+  "rebuilding or replacing paper/main.pdf",
+  "deleting or renaming existing export_bundle packages",
+  "rewriting the three external-review questions",
+  "reviewer agents or workflows",
+  "installs, downloads, GPU, paid API, web compiler, conference submission, release, other-branch push, force push"
+ ],
+ "seeds": "none (no stochastic stage)",
+ "splits": "none",
+ "estimand": "none (delivery only)",
+ "comparators": "none",
+ "solver_precision": "not applicable",
+ "stop_conditions": [
+  "paper/main.pdf hash, size or page facts differ from the recorded v4.2 values (STOP_MISMATCH; nothing is delivered)",
+  "any listed input hash differs from the freeze (STOP_MISMATCH)",
+  "the deliverable copy is not byte-identical",
+  "structural check exceeds 300 CPU-seconds (subprocess timeout)",
+  "the zip self-build fails: allowed response is one minimal fix of the member list and one rerun; no protocol change"
+ ],
+ "limits": {
+  "wall_s": 1800,
+  "cpu_s_structural_check": 300,
+  "ram_mb": 4096,
+  "new_disk_mb": 200,
+  "network": "GitHub API reads and git push by the caller only; none inside the runner",
+  "gpu": 0
+ },
+ "skip_rule": "copy_pdf, source_zip and build_check are skipped when the recorded evidence matches the current inputs/outputs",
+ "source_zip": {
+  "members": [
+   "paper/algorithm.sty",
+   "paper/algorithmic.sty",
+   "paper/fancyhdr.sty",
+   "paper/figures/alpha_curves.dat",
+   "paper/figures/extproxy.dat",
+   "paper/figures/norm_budget.dat",
+   "paper/figures/pilot_dose.dat",
+   "paper/generated_numbers.tex",
+   "paper/icml2026.bst",
+   "paper/icml2026.sty",
+   "paper/main.tex",
+   "paper/references.bib",
+   "paper/tables/tab_activeset_all.tex",
+   "paper/tables/tab_activeset_relu.tex",
+   "paper/tables/tab_contract_exec.tex",
+   "paper/tables/tab_coord.tex",
+   "paper/tables/tab_extproxy.tex",
+   "paper/tables/tab_feasibility.tex",
+   "paper/tables/tab_linear.tex",
+   "paper/tables/tab_matched_denominators.tex",
+   "paper/tables/tab_norm_budget.tex",
+   "paper/tables/tab_pilot_equalnorm.tex",
+   "paper/tables/tab_pilot_matched.tex",
+   "paper/tables/tab_pilot_matched_median.tex",
+   "paper/tables/tab_pilot_matched_quality.tex",
+   "paper/tables/tab_pilot_paired.tex",
+   "paper/tables/tab_space.tex",
+   "paper/tables/tab_space_paired.tex",
+   "paper/tables/tab_sparsity_exploratory.tex"
+  ],
+  "not_included": "Not included: paper/README.md and paper/claims.csv (internal records; in the repository and the internal package), raw results and code (export_bundle packages / repository), the PDF (delivered separately as the .pdf file).",
+  "scan": {
+   "patterns_file": "internal/anonymity_patterns.txt",
+   "commits_file": "internal/own_commits.txt"
+  }
+ },
+ "style": {
+  "files": [
+   "paper/icml2026.sty",
+   "paper/icml2026.bst",
+   "paper/algorithm.sty",
+   "paper/algorithmic.sty",
+   "paper/fancyhdr.sty"
+  ],
+  "version": "icml2026.sty: ICML 2026 LaTeX style, 'version of 2025-10-29' (file header); used with \\usepackage{icml2026} (anonymous review mode)",
+  "description": "Official ICML 2026 style files (icml2026.sty, header 'version of 2025-10-29'; icml2026.bst; algorithm.sty; algorithmic.sty; fancyhdr.sty), unmodified and not renamed, loaded as \\usepackage{icml2026} (anonymous review mode). They serve as the temporary template while the ICML 2027 instructions are not obtained (TARGET_YEAR = 2027, TEMPLATE_YEAR = 2026). Fonts, margins and spacing are the style defaults."
+ },
+ "build": {
+  "recorded": {
+   "date": "2026-10-05",
+   "description": "The delivered PDF was built once on 2026-10-05 from these sources with the session TeX Live 2026 (scheme-basic plus the packages listed below; pdfTeX 3.141592653-2.6-1.40.29, BibTeX 0.99e) by four passes in paper/. Flags as recorded: -interaction=nonstopmode; the log shows 'restricted \\write18 enabled' (the pdfTeX default; -no-shell-escape was not passed) and -halt-on-error was not passed. Nothing was sent to a web compiler.",
+   "commands": [
+    "cd paper",
+    "pdflatex -interaction=nonstopmode main",
+    "bibtex main",
+    "pdflatex -interaction=nonstopmode main",
+    "pdflatex -interaction=nonstopmode main"
+   ],
+   "tex": "TeX Live 2026 scheme-basic (install-tl 20261002; tlmgr r79639) + booktabs caption cleveref eso-pic float forloop fp latexmk mathtools microtype pgf pgfplots xcolor xkeyval everyshi times courier helvetic; pdfTeX 1.40.29; BibTeX 0.99e",
+   "log_evidence": "scratch b42.log line 2: 'restricted \\write18 enabled.'; 0 overfull boxes; 0 undefined references; 0 font-shape warnings (STATUS.md seventh session)"
+  },
+  "check": {
+   "shell": [
+    "cd paper",
+    "pdflatex -halt-on-error -no-shell-escape -interaction=nonstopmode main",
+    "bibtex main",
+    "pdflatex -halt-on-error -no-shell-escape -interaction=nonstopmode main",
+    "pdflatex -halt-on-error -no-shell-escape -interaction=nonstopmode main"
+   ]
+  },
+  "commands": [
+   [
+    "pdflatex",
+    "-halt-on-error",
+    "-no-shell-escape",
+    "-interaction=nonstopmode",
+    "main"
+   ],
+   [
+    "bibtex",
+    "main"
+   ],
+   [
+    "pdflatex",
+    "-halt-on-error",
+    "-no-shell-escape",
+    "-interaction=nonstopmode",
+    "main"
+   ],
+   [
+    "pdflatex",
+    "-halt-on-error",
+    "-no-shell-escape",
+    "-interaction=nonstopmode",
+    "main"
+   ]
+  ],
+  "required_packages": [
+   "microtype",
+   "graphicx",
+   "subcaption",
+   "booktabs",
+   "array",
+   "hyperref",
+   "amsmath",
+   "amssymb",
+   "mathtools",
+   "amsthm",
+   "cleveref",
+   "pgfplots",
+   "icml2026 (shipped)",
+   "fancyhdr/algorithm/algorithmic (shipped)",
+   "times/courier/helvetic fonts (Type 1)"
+  ]
+ },
+ "immutable_links": {
+  "verified_on": "2026-10-11 via the GitHub contents API: blob sha f948c007dbb80c2326d55d2438c4b7539546e2f5 = local git hash-object, size 416464",
+  "paper_main_pdf_at_source_commit": "https://github.com/donggil113/Encoder-Consistent-Interventions-for-Language-Models/blob/0f5b60e539f56e74942e1170e42c95ba9d092e9d/paper/main.pdf",
+  "paper_main_pdf_raw_download": "https://raw.githubusercontent.com/donggil113/Encoder-Consistent-Interventions-for-Language-Models/0f5b60e539f56e74942e1170e42c95ba9d092e9d/paper/main.pdf",
+  "source_commit": "https://github.com/donggil113/Encoder-Consistent-Interventions-for-Language-Models/commit/0f5b60e539f56e74942e1170e42c95ba9d092e9d",
+  "deliverables_note": "the deliverables/ copies are added by the R8 commit; their links are reported in the session reply after the push (a commit cannot carry its own hash)"
+ },
+ "pages_viewed": [
+  {
+   "pdf_sha256": "2303c5287c83b0e2e0f6a1d7d5b7fa00ec8f178c75403dd4023b2c47926d02a9",
+   "version": "v4.1",
+   "date": "2026-10-02",
+   "pages": "1-20 (all pages) rendered at 110 dpi with pymupdf and inspected by the main worker and by per-page agents (two passes); 0 overfull boxes, 0 undefined references",
+   "record": "STATUS.md sixth session; run_manifest.json sixth_session.build"
+  },
+  {
+   "pdf_sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8",
+   "version": "v4.2 (delivered)",
+   "date": "2026-10-05",
+   "pages": "5-7 (the pages whose text changed) rendered at 110 dpi and read by the main worker; pages 1-4 and 8-20 were rendered but not re-inspected for this hash (their text did not change from v4.1)",
+   "record": "STATUS.md seventh session; scratch render_v42/render_report.json (20 pages, body_end_page 7)"
+  },
+  {
+   "pdf_sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8",
+   "version": "v4.2 (delivered)",
+   "date": "2026-10-11",
+   "pages": "none re-rendered in R8 (unchanged PDF; the receipts above are reused); page count and body-end page re-derived from the file by the runner",
+   "record": "deliverables/P3_delivery.json"
+  }
+ ],
+ "research_status": {
+  "study": "STUDY_SCOPE_FROZEN",
+  "method_utility": "METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT",
+  "SUBMISSION_READY": false,
+  "TARGET_YEAR": 2027,
+  "TEMPLATE_YEAR": 2026,
+  "icml_2027_instructions": "not obtained: the official 2027 URLs returned 404 on 2026-09-26/27; the 2026 anonymous review style is the temporary template",
+  "external_read_review": "UNASSIGNED (three questions in paper/README.md, left as written; nobody contacted; no acceptance or verification claimed)",
+  "preserved_results": [
+   "primary: 0 of 32 discordant articles (LN vs decoder any-hit) at one KL cap",
+   "model-based sensitivity bounds 8.94% (one-sided) / 10.89% (two-sided Clopper-Pearson)",
+   "28 of 32 test articles reused from REAL-01R",
+   "lexical proxy only; no semantic judge",
+   "canonical vs raw readout distinction (mean-only control)",
+   "float32 contract record CONTRACT_FAIL_BLOCKED",
+   "DiffMean: 3 discordant articles, net +1",
+   "the 'All-Star' hit"
+  ],
+  "separate_records": {
+   "compile": "BUILT (2026-10-05; unchanged, not rebuilt in R8)",
+   "visual_check": "see pages_viewed",
+   "scientific_validity": "not certified by this delivery",
+   "novelty": "not assessed by this delivery",
+   "submission_readiness": "false"
+  }
+ },
+ "next_command": "PYTHONPATH=src python3 -m saeedit.deliver --config configs/auto_run_r8.json --texbin <TeX bin dir> --scratch <scratch dir>",
+ "resume_note": "the runner is idempotent; rerunning after a session end skips completed stages whose evidence still matches",
+ "evidence": {
+  "verify_pdf": {
+   "sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8",
+   "verdict": "MATCH"
+  },
+  "copy_pdf": {
+   "file": "deliverables/P3_v4.2_0f5b60e.pdf",
+   "sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8"
+  },
+  "source_zip": {
+   "file": "deliverables/P3_source.zip",
+   "sha256": "20e499d3b2b469d517d849df82b3f0c4be364ee7fc6aebf79e721aa19856f437"
+  },
+  "build_check": {
+   "verdict": "PASS",
+   "zip_sha256": "20e499d3b2b469d517d849df82b3f0c4be364ee7fc6aebf79e721aa19856f437",
+   "wall_s": 5.9,
+   "cpu_s_children": 4.51
+  },
+  "delivery_record": {
+   "file": "deliverables/P3_delivery.json",
+   "sha256": "0cb0dc78c0a3e368437c1ef474d894a78fed75342b6c04fdad54f0aaac07c7c2"
+  }
+ },
+ "amendments": [
+  {
+   "when": "2026-10-11, after the first runner invocation",
+   "what": "engineering bug in the runner: it read cfg['build_check'] while the contract stores the check commands under cfg['build']; one-line fix in src/saeedit/deliver.py; no stage, limit, member list or input changed",
+   "first_run": "verify_pdf MATCH, copy_pdf COPIED (byte-identical), source_zip WRITTEN; crashed before build_check; nothing else written",
+   "runner_sha256_before": "6f08863a60ef995d0b5d46c29320af7aecf9b93234add07b4e182053bc9472c6",
+   "runner_sha256_after": "f3ac67a43441f4f8e0a11e0984b2d29707a456e1f55eaf6a2c9b6e2e6ee336e3",
+   "frozen_sha256_before": "4807c3a0478a4ff1865892cbc57e858cd199b393ded56fabdc22f5732c7d507b",
+   "allowed_by": "contract rule: one minimal fix that changes no protocol, plus one rerun of the affected stage"
+  }
+ ]
+}

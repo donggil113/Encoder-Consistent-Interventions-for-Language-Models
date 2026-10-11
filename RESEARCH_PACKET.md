@@ -741,3 +741,12 @@ Choose the paper's scope. The two options are exclusive in this round's budget.
   "Not evaluated" limitation in the manuscript (v4.2, wording only).
 - Three questions for an external reader are in `paper/README.md`; no reader assigned.
 - Research direction is decided separately after that read; no further automatic research.
+
+## 17. R8: delivery of the frozen v4.2 PDF (2026-10-11)
+
+- No research stage. `paper/main.pdf` unchanged (sha256 `24ced5541de77435…`), not rebuilt;
+  copied byte-for-byte to `deliverables/P3_v4.2_0f5b60e.pdf`, with `P3_source.zip` (+ BUILD.md)
+  and `P3_delivery.json`. Contract: `configs/auto_run_r8.json`; runner: `src/saeedit/deliver.py`.
+- The zip builds standalone with `-halt-on-error -no-shell-escape` to the same 20 pages and
+  identical extracted text (scratch folder only).
+- Verdicts, the three external-review questions and the reader status (UNASSIGNED) unchanged.

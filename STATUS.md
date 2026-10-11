@@ -1,8 +1,72 @@
 # STATUS — P3: Do SAE Edits Change What They Claim?
 
-Last updated: 2026-10-05 (seventh session, Round 7). Branch: `claude/magical-bell-8vyrpd`.
+Last updated: 2026-10-11 (eighth session, R8 delivery). Branch: `claude/magical-bell-8vyrpd`.
 
-## Seventh session summary (Round 7; read first)
+## Eighth session summary (R8 delivery, 2026-10-11; read first)
+
+Checked at start: HEAD `0f5b60e` equal to origin; clean tree; `paper/main.pdf` header `%PDF-1.7`,
+416,464 bytes, sha256 `24ced5541de77435…` equal to the v4.2 record (seventh session below,
+`run_manifest.json` seventh_session, README compile row); git blob `f948c007…` equal to the blob
+GitHub serves for commit 0f5b60e (contents API, size 416464); the session TeX install, the venv
+(pymupdf) and the v4.2 page renders still present; `/nvmedata` absent (not created); no CLAUDE.md.
+Verdicts kept: **STUDY_SCOPE_FROZEN / METHOD_UTILITY_NOT_SUPPORTED_IN_THIS_PILOT**.
+SUBMISSION_READY stays false; the external reader stays **UNASSIGNED** and the three README
+questions are untouched.
+
+**Delivery (the PDF is unchanged and was not rebuilt).** The contract was frozen before
+execution in `configs/auto_run_r8.json` (run id `P3-R8-DELIVERY-2026-10-11`: delivery stages
+only, no research stage, input hashes, limits, stop conditions; the runner appends only the
+`evidence` block). Runner `src/saeedit/deliver.py` (standard library; pymupdf for page facts),
+helpers covered by `tests/test_deliver.py` (4 tests, pass).
+- `deliverables/P3_v4.2_0f5b60e.pdf`: byte copy of `paper/main.pdf` (`cmp` identical; sha256
+  `24ced5541de77435…`; 20 pages; body ends on page 7; appendix starts on page 11; author
+  metadata "Anonymous Authors"). Attached in the session reply.
+- `deliverables/P3_source.zip` (225,353 bytes; sha256 `20e499d3b2b469d5…`): the 29 tracked
+  manuscript sources (main.tex, references.bib, generated_numbers.tex, 16 tables, 4 `.dat`
+  figure files, the unmodified ICML 2026 style files) plus a generated `BUILD.md` (also at
+  `deliverables/P3_BUILD.md`); deterministic (sorted members, fixed timestamps). Not included:
+  README.md, claims.csv, raw results, code, the PDF. Identifying-string scan (15 patterns,
+  38 commit ids): 0 hits; the zip is a user deliverable and is not redacted.
+- `deliverables/P3_delivery.json`: source commit, hashes, pages, style version, the recorded
+  build command, the check command, pages viewed, study status, file list with hashes.
+- Self-containment check (a check in the scratch folder, not a rebuild of `paper/main.pdf`):
+  the zip unpacked and built with `pdflatex -halt-on-error -no-shell-escape
+  -interaction=nonstopmode` ×3 + `bibtex`; all four exit 0; 20 pages, body end page 7,
+  appendix page 11, 0 overfull boxes, 0 undefined references, 0 font warnings; extracted text
+  identical to the delivered PDF on all 20 pages. The log has no `\write18` line and epstopdf
+  reports "Shell escape feature is not enabled" (shell escape off). The delivered PDF itself
+  was built on 2026-10-05 without those two flags (`restricted \write18 enabled`, the pdfTeX
+  default); BUILD.md and the record say so.
+- One engineering bug during the run: the runner read `cfg["build_check"]` while the contract
+  stores the commands under `cfg["build"]`; the first invocation did verify/copy/zip and
+  crashed before the check. One-line fix, recorded in the contract's `amendments` (runner
+  hashes before/after, frozen hash before), one rerun (copy and zip skipped by hash, the
+  check ran). No stage, limit, member list or input changed.
+- Pages viewed in R8: none re-rendered (unchanged PDF; the receipts of 2026-10-02 (v4.1, all
+  20 pages) and 2026-10-05 (v4.2, pages 5–7) are reused and listed in the record). The runner
+  re-derived the page count and the body-end page from the file.
+- Existing packages untouched (`export_bundle/p3_v4_1_*.tar.gz` keep the v4_1 file name and
+  hold v4.2 content). No reviewer agent or workflow. Nothing uploaded; no PR; no submission.
+
+**Correction to the seventh-session record:** the README hash listed there (`95557a9d…`) was
+taken before that file's final edit; the committed `paper/README.md` at 0f5b60e has sha256
+`9780bc7dc93f698c…`. The manuscript and PDF hashes there are correct.
+
+**Not done (by instruction):** no topic, dose, KL, feature, model, semantic judge, generation,
+activation check or readout-closure rerun; no rebuild of `paper/main.pdf`; no install, download,
+GPU or paid API.
+
+### Eighth session: cost ledger
+
+| step | wall | process CPU (incl. children) | notes |
+|---|---|---|---|
+| state checks, 2 GitHub API reads | interactive | – | no agents |
+| runner, first invocation (verify, copy, zip; crashed before the check) | 0.5 s | 0.35 s | |
+| runner, rerun incl. the self-containment build | 6.2 s | 0.3 s self + 4.5 s children | pdflatex ×3 + bibtex |
+| unit tests | < 0.1 s | – | |
+| network / installs / GPU | 0 | – | git push only, by the session |
+
+## Seventh session summary (Round 7; previous)
 
 Checked at start: HEAD `9956c8f` equal to origin; clean tree; `paper/main.pdf` sha256
 `2303c528…` as reported; the session TeX install and the page renders still present; no

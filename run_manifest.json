@@ -698,5 +698,70 @@
    "full manuscript re-review",
    "per-page subagents"
   ]
+ },
+ "eighth_session": {
+  "date": "2026-10-11",
+  "head_at_start": "0f5b60e539f56e74942e1170e42c95ba9d092e9d",
+  "head_equals_origin": true,
+  "decision": "R8: deliver the frozen v4.2 PDF; research frozen; no rebuild",
+  "contract": "configs/auto_run_r8.json (frozen before execution; one amendment for a runner key bug; evidence block appended by the runner)",
+  "runner": "src/saeedit/deliver.py; tests/test_deliver.py (4 pass)",
+  "deliverables": {
+   "pdf": {
+    "file": "deliverables/P3_v4.2_0f5b60e.pdf",
+    "sha256": "24ced5541de774356502b3b93e8d7c6a3dcac5d5388b288cb1b2dfc6966352e8",
+    "bytes": 416464,
+    "byte_identical_to_paper_main_pdf": true,
+    "pages": 20,
+    "body_end_page": 7,
+    "appendix_start_page": 11
+   },
+   "source_zip": {
+    "file": "deliverables/P3_source.zip",
+    "sha256": "20e499d3b2b469d517d849df82b3f0c4be364ee7fc6aebf79e721aa19856f437",
+    "bytes": 225353,
+    "members": 30
+   },
+   "record": "deliverables/P3_delivery.json",
+   "build_md": "deliverables/P3_BUILD.md"
+  },
+  "self_containment_check": {
+   "commands": "pdflatex -halt-on-error -no-shell-escape -interaction=nonstopmode main; bibtex main; pdflatex ...; pdflatex ...",
+   "verdict": "PASS",
+   "pages": 20,
+   "body_end_page": 7,
+   "overfull": 0,
+   "undefined": 0,
+   "font_warnings": 0,
+   "text_identical_on_all_pages": true,
+   "wall_s": 5.9,
+   "cpu_s_children": 4.51,
+   "note": "scratch folder only; paper/main.pdf not rebuilt or replaced"
+  },
+  "pages_viewed_in_r8": "none re-rendered; receipts of 2026-10-02 (v4.1, all pages) and 2026-10-05 (v4.2, pages 5-7) reused",
+  "review": {
+   "reviewer_agents": 0,
+   "workflows": 0,
+   "external_reader": "UNASSIGNED"
+  },
+  "record_correction": "seventh_session: committed paper/README.md sha256 at 0f5b60e is 9780bc7dc93f698c0136de1c8038e194b429f302121ba0b86f07439a5bcb8724 (STATUS listed a pre-final-edit hash)",
+  "not_done": [
+   "rebuild of paper/main.pdf",
+   "any experiment, topic, dose, KL, feature, model, semantic judge, generation, activation check, readout closure",
+   "install/download/GPU/paid API",
+   "upload, PR, submission, release"
+  ],
+  "cost": {
+   "runner_first_invocation": {
+    "wall_s": 0.53,
+    "cpu_s": 0.35
+   },
+   "runner_rerun": {
+    "wall_s": 6.16,
+    "cpu_s_self": 0.31,
+    "cpu_s_children": 4.51
+   },
+   "network": "GitHub API reads and git push only"
+  }
  }
 }
